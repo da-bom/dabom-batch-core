@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3310/app_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DATABASE_USER:app_user}
+    password: ${DATABASE_PASSWORD:app_password}
+    hikari:
+      max-lifetime: 300000
+      validation-timeout: 5000
+      keepalive-time: 30000
+
+---
+spring.config.activate.on-profile: local
+
+logging:
+  level:
+    org.hibernate.sql: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.zaxxer.hikari.HikariConfig: DEBUG
+    com.mysql.cj: DEBUG

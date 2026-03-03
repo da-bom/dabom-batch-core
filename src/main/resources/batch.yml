@@ -1,0 +1,11 @@
+spring:
+  batch:
+    job:
+      enabled: true
+      name: healthCheckJob
+    jdbc:
+      initialize-schema: always
+
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/YOUR/WEBHOOK/URL}

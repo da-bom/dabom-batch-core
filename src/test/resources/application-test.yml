@@ -1,0 +1,21 @@
+spring:
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: embedded
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/test
+
+slack:
+  webhook:
+    url: https://hooks.slack.com/services/test
+
+project:
+  name: Test Worker
