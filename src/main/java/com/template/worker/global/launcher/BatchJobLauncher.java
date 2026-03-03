@@ -1,5 +1,6 @@
 package com.template.worker.global.launcher;
 
+import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.batch.core.Job;
@@ -7,6 +8,8 @@ import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.configuration.JobRegistry;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.stereotype.Component;
+
+import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,7 +23,12 @@ public class BatchJobLauncher {
     public void run(String jobName, Map<String, String> params) throws Exception {
         Job job = jobRegistry.getJob(jobName);
         JobParametersBuilder builder = new JobParametersBuilder();
-        params.forEach(builder::addString);
+        Map<String, String> launchParams = (params == null) ? Collections.emptyMap() : params;
+        launchParams.forEach(builder::addString);
+        if (!launchParams.containsKey(MonthlyUsageResetJobConstants.PARAM_LAUNCH_TIME)) {
+            builder.addLong(
+                    MonthlyUsageResetJobConstants.PARAM_LAUNCH_TIME, System.currentTimeMillis());
+        }
         jobLauncher.run(job, builder.toJobParameters());
     }
 }

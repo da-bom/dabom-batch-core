@@ -6,6 +6,13 @@ spring:
     jdbc:
       initialize-schema: always
 
-slack:
-  webhook:
-    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/YOUR/WEBHOOK/URL}
+batch:
+  schedules:
+    monthly-usage-reset:
+      enabled: ${BATCH_MONTHLY_USAGE_RESET_ENABLED:true}
+      cron: ${BATCH_MONTHLY_USAGE_RESET_CRON:0 1 0 1 * *}
+  jobs:
+    monthly-usage-reset:
+      lock-ttl: ${BATCH_MONTHLY_USAGE_RESET_LOCK_TTL:PT1H}
+      redis-chunk-size: ${BATCH_MONTHLY_USAGE_RESET_REDIS_CHUNK_SIZE:1000}
+      db-fetch-size: ${BATCH_MONTHLY_USAGE_RESET_DB_FETCH_SIZE:1000}
