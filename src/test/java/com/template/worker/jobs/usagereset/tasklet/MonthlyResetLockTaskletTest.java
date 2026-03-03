@@ -23,11 +23,11 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
 
+import com.template.worker.jobs.usagecommon.util.RedisKeyGenerator;
 import com.template.worker.jobs.usagereset.support.MonthlyResetLockManager;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobParameterSupport;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetProperties;
-import com.template.worker.jobs.usagereset.support.MonthlyUsageResetRedisKeyGenerator;
 
 @ExtendWith(MockitoExtension.class)
 class MonthlyResetLockTaskletTest {
@@ -35,7 +35,7 @@ class MonthlyResetLockTaskletTest {
     @Mock private MonthlyResetLockManager lockManager;
     @Mock private MonthlyUsageResetJobParameterSupport parameterSupport;
     @Mock private MonthlyUsageResetProperties properties;
-    @Mock private MonthlyUsageResetRedisKeyGenerator keyGenerator;
+    @Mock private RedisKeyGenerator keyGenerator;
 
     @InjectMocks private MonthlyResetLockTasklet tasklet;
 

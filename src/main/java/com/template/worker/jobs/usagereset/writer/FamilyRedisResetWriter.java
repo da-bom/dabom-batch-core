@@ -7,7 +7,7 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.jobs.usagereset.support.MonthlyUsageResetRedisKeyGenerator;
+import com.template.worker.jobs.usagecommon.util.RedisKeyGenerator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,7 +20,7 @@ public class FamilyRedisResetWriter implements ItemWriter<Long> {
     private static final int ALERT_THRESHOLD_50 = 50;
 
     private final StringRedisTemplate redisTemplate;
-    private final MonthlyUsageResetRedisKeyGenerator keyGenerator;
+    private final RedisKeyGenerator keyGenerator;
 
     @Override
     public void write(Chunk<? extends Long> chunk) {

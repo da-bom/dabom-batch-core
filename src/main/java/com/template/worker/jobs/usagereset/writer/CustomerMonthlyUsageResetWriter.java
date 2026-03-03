@@ -11,9 +11,9 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.usagecommon.util.RedisKeyGenerator;
 import com.template.worker.jobs.usagereset.model.FamilyMemberUsageResetTarget;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobParameterSupport;
-import com.template.worker.jobs.usagereset.support.MonthlyUsageResetRedisKeyGenerator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +25,7 @@ public class CustomerMonthlyUsageResetWriter
     private static final String RESET_VALUE = "0";
 
     private final StringRedisTemplate redisTemplate;
-    private final MonthlyUsageResetRedisKeyGenerator keyGenerator;
+    private final RedisKeyGenerator keyGenerator;
     private final MonthlyUsageResetJobParameterSupport parameterSupport;
 
     private long nextMonthStartEpochSecond;

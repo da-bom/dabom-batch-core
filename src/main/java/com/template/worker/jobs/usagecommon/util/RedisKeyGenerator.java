@@ -1,11 +1,11 @@
-package com.template.worker.jobs.usagereset.support;
+package com.template.worker.jobs.usagecommon.util;
 
 import java.time.LocalDate;
 
 import org.springframework.stereotype.Component;
 
 @Component
-public class MonthlyUsageResetRedisKeyGenerator {
+public class RedisKeyGenerator {
     private static final String KEY_SEPARATOR = ":";
     private static final String FAMILY_PREFIX = "family";
     private static final String CUSTOMER_KEY = "customer";

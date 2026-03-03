@@ -13,11 +13,11 @@ import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.usagecommon.util.RedisKeyGenerator;
 import com.template.worker.jobs.usagereset.support.MonthlyResetLockManager;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobParameterSupport;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetProperties;
-import com.template.worker.jobs.usagereset.support.MonthlyUsageResetRedisKeyGenerator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class MonthlyResetLockTasklet implements Tasklet, StepExecutionListener {
     private final MonthlyResetLockManager monthlyResetLockManager;
     private final MonthlyUsageResetJobParameterSupport parameterSupport;
     private final MonthlyUsageResetProperties properties;
-    private final MonthlyUsageResetRedisKeyGenerator keyGenerator;
+    private final RedisKeyGenerator keyGenerator;
 
     private String lockKey;
     private String lockOwner;
