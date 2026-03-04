@@ -34,6 +34,7 @@ management:
     tags:
       application: ${spring.application.name}
   tracing:
+    enabled: ${OTEL_TRACING_ENABLED:false}
     sampling:
       probability: ${OTEL_SAMPLING_PROBABILITY:1.0}
   otlp:
