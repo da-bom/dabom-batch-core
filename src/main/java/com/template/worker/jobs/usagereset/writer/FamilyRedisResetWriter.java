@@ -7,7 +7,7 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.jobs.usagecommon.util.RedisKeyGenerator;
+import com.template.worker.global.util.RedisKeyGenerator;
 
 import lombok.RequiredArgsConstructor;
 

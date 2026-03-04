@@ -1,4 +1,4 @@
-package com.template.worker.jobs.usagecommon.util;
+package com.template.worker.global.util;
 
 import java.time.LocalDate;
 
