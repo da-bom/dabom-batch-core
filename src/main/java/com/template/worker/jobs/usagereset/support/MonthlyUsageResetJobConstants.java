@@ -1,6 +1,7 @@
 package com.template.worker.jobs.usagereset.support;
 
 import java.time.ZoneId;
+import java.util.List;
 
 public final class MonthlyUsageResetJobConstants {
 
@@ -23,6 +24,7 @@ public final class MonthlyUsageResetJobConstants {
     public static final String JOB_CONTEXT_LOCK_KEY = "lockKey";
     public static final String JOB_CONTEXT_LOCK_OWNER = "lockOwner";
     public static final String JOB_CONTEXT_DB_UPDATED_FAMILY_COUNT = "dbUpdatedFamilyCount";
+    public static final List<Integer> ALERT_THRESHOLDS = List.of(10, 30, 50);
 
     private MonthlyUsageResetJobConstants() {}
 }
