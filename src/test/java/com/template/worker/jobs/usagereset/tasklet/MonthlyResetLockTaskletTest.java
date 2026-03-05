@@ -24,9 +24,9 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
 
 import com.template.worker.jobs.usagereset.support.MonthlyResetLockManager;
-import com.template.worker.jobs.usagereset.support.MonthlyUsageResetLockKeyGenerator;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobParameterSupport;
+import com.template.worker.jobs.usagereset.support.MonthlyUsageResetLockKeyGenerator;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetProperties;
 
 @ExtendWith(MockitoExtension.class)
