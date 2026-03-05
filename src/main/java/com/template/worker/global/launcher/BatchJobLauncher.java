@@ -1,5 +1,6 @@
 package com.template.worker.global.launcher;
 
+import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.batch.core.Job;
@@ -14,13 +15,19 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class BatchJobLauncher {
+    private static final String PARAM_LAUNCH_TIME = "launchTime";
+
     private final JobLauncher jobLauncher;
     private final JobRegistry jobRegistry;
 
     public void run(String jobName, Map<String, String> params) throws Exception {
         Job job = jobRegistry.getJob(jobName);
         JobParametersBuilder builder = new JobParametersBuilder();
-        params.forEach(builder::addString);
+        Map<String, String> launchParams = (params == null) ? Collections.emptyMap() : params;
+        launchParams.forEach(builder::addString);
+        if (!launchParams.containsKey(PARAM_LAUNCH_TIME)) {
+            builder.addLong(PARAM_LAUNCH_TIME, System.currentTimeMillis());
+        }
         jobLauncher.run(job, builder.toJobParameters());
     }
 }

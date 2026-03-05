@@ -1,11 +1,18 @@
 spring:
   batch:
     job:
-      enabled: true
+      enabled: ${BATCH_JOB_ENABLED:false}
       name: healthCheckJob
     jdbc:
       initialize-schema: always
 
-slack:
-  webhook:
-    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/YOUR/WEBHOOK/URL}
+batch:
+  schedules:
+    monthly-usage-reset:
+      enabled: ${BATCH_MONTHLY_USAGE_RESET_ENABLED:false}
+      cron: ${BATCH_MONTHLY_USAGE_RESET_CRON:0 1 0 1 * *}
+  jobs:
+    monthly-usage-reset:
+      lock-ttl: ${BATCH_MONTHLY_USAGE_RESET_LOCK_TTL:PT1H}
+      redis-chunk-size: ${BATCH_MONTHLY_USAGE_RESET_REDIS_CHUNK_SIZE:2000}
+      db-fetch-size: ${BATCH_MONTHLY_USAGE_RESET_DB_FETCH_SIZE:4000}
