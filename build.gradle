@@ -180,8 +180,8 @@ spotless {
 // ============================================================================
 sonar {
     properties {
-        property 'sonar.projectKey', 'template-batch'
-        property 'sonar.projectName', 'template-batch'
+        property 'sonar.projectKey', 'dabom-batch-core'
+        property 'sonar.projectName', 'dabom-batch-core'
         // Java 분석을 위한 바이너리 경로
         property 'sonar.java.binaries', 'build/classes/java/main'
         property 'sonar.java.libraries', "${System.getProperty('user.home')}/.gradle/caches/**/modules-*/files-*/**/*.jar"
