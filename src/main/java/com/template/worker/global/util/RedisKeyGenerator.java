@@ -1,6 +1,7 @@
 package com.template.worker.global.util;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,8 @@ public class RedisKeyGenerator {
     private static final String USAGE_KEY = "usage";
     private static final String MONTHLY_KEY = "monthly";
     private static final String BATCH_LOCK_PREFIX = "batch:lock:monthly-usage-reset";
+    private static final DateTimeFormatter MONTH_SUFFIX_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyyMM");
 
     public String monthlyResetLockKey(LocalDate targetMonth) {
         return BATCH_LOCK_PREFIX + KEY_SEPARATOR + targetMonth;
@@ -48,5 +51,11 @@ public class RedisKeyGenerator {
                 + USAGE_KEY
                 + KEY_SEPARATOR
                 + MONTHLY_KEY;
+    }
+
+    public String customerMonthlyUsageKey(Long familyId, Long customerId, LocalDate eventMonth) {
+        return customerMonthlyUsageKey(familyId, customerId)
+                + KEY_SEPARATOR
+                + eventMonth.format(MONTH_SUFFIX_FORMATTER);
     }
 }
