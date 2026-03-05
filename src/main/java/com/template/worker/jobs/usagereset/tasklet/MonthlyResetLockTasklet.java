@@ -13,8 +13,8 @@ import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.global.util.RedisKeyGenerator;
 import com.template.worker.jobs.usagereset.support.MonthlyResetLockManager;
+import com.template.worker.jobs.usagereset.support.MonthlyUsageResetLockKeyGenerator;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobParameterSupport;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetProperties;
@@ -30,7 +30,7 @@ public class MonthlyResetLockTasklet implements Tasklet, StepExecutionListener {
     private final MonthlyResetLockManager monthlyResetLockManager;
     private final MonthlyUsageResetJobParameterSupport parameterSupport;
     private final MonthlyUsageResetProperties properties;
-    private final RedisKeyGenerator keyGenerator;
+    private final MonthlyUsageResetLockKeyGenerator lockKeyGenerator;
 
     private String lockKey;
     private String lockOwner;
@@ -40,7 +40,7 @@ public class MonthlyResetLockTasklet implements Tasklet, StepExecutionListener {
     public void beforeStep(StepExecution stepExecution) {
         // targetMonth 기준으로 락 키와 소유자 값을 준비함
         targetMonth = parameterSupport.resolveTargetMonth(stepExecution.getJobParameters());
-        lockKey = keyGenerator.monthlyResetLockKey(targetMonth);
+        lockKey = lockKeyGenerator.monthlyResetLockKey(targetMonth);
         lockOwner = UUID.randomUUID().toString();
 
         // 후속 스텝과 리스너에서 재사용할 값을 JobExecutionContext에 저장함

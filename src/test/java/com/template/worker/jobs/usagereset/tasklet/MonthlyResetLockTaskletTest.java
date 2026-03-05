@@ -23,8 +23,8 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
 
-import com.template.worker.global.util.RedisKeyGenerator;
 import com.template.worker.jobs.usagereset.support.MonthlyResetLockManager;
+import com.template.worker.jobs.usagereset.support.MonthlyUsageResetLockKeyGenerator;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobParameterSupport;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetProperties;
@@ -35,7 +35,7 @@ class MonthlyResetLockTaskletTest {
     @Mock private MonthlyResetLockManager lockManager;
     @Mock private MonthlyUsageResetJobParameterSupport parameterSupport;
     @Mock private MonthlyUsageResetProperties properties;
-    @Mock private RedisKeyGenerator keyGenerator;
+    @Mock private MonthlyUsageResetLockKeyGenerator lockKeyGenerator;
 
     @InjectMocks private MonthlyResetLockTasklet tasklet;
 
@@ -51,7 +51,7 @@ class MonthlyResetLockTaskletTest {
 
         LocalDate targetMonth = LocalDate.of(2026, 3, 1);
         when(parameterSupport.resolveTargetMonth(any(JobParameters.class))).thenReturn(targetMonth);
-        when(keyGenerator.monthlyResetLockKey(targetMonth))
+        when(lockKeyGenerator.monthlyResetLockKey(targetMonth))
                 .thenReturn("batch:lock:monthly-usage-reset:2026-03-01");
         when(properties.getLockTtl()).thenReturn(Duration.ofHours(1));
         when(lockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))

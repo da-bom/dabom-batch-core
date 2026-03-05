@@ -15,13 +15,8 @@ public class RedisKeyGenerator {
     private static final String REMAINING_KEY = "remaining";
     private static final String USAGE_KEY = "usage";
     private static final String MONTHLY_KEY = "monthly";
-    private static final String BATCH_LOCK_PREFIX = "batch:lock:monthly-usage-reset";
     private static final DateTimeFormatter MONTH_SUFFIX_FORMATTER =
             DateTimeFormatter.ofPattern("yyyyMM");
-
-    public String monthlyResetLockKey(LocalDate targetMonth) {
-        return BATCH_LOCK_PREFIX + KEY_SEPARATOR + targetMonth;
-    }
 
     public String familyRemainingKey(Long familyId) {
         return FAMILY_PREFIX + KEY_SEPARATOR + familyId + KEY_SEPARATOR + REMAINING_KEY;
