@@ -8,7 +8,6 @@ public final class MonthlyUsageResetJobConstants {
 
     public static final String JOB_NAME = "monthly-usage-reset-job";
     public static final String PARAM_TARGET_MONTH = "targetMonth";
-    public static final String PARAM_LAUNCH_TIME = "launchTime";
 
     public static final String STEP_ACQUIRE_MONTHLY_RESET_LOCK = "acquire-monthly-reset-lock-step";
     public static final String STEP_RESET_FAMILY_MONTH = "reset-family-month-step";
