@@ -1,44 +1,30 @@
 package com.template.worker.jobs.usagereset.support;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
 
 import org.springframework.batch.core.JobParameters;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.TargetMonthParameterSupport;
+
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class MonthlyUsageResetJobParameterSupport {
 
-    public LocalDate resolveTargetMonth(JobParameters jobParameters) {
-        // 파라미터 객체가 없으면 KST 현재 월 1일을 기본값으로 사용함
-        if (jobParameters == null) {
-            return defaultTargetMonth();
-        }
+    private final TargetMonthParameterSupport targetMonthParameterSupport;
 
-        String targetMonth =
-                jobParameters.getString(MonthlyUsageResetJobConstants.PARAM_TARGET_MONTH);
-        return resolveTargetMonth(targetMonth);
+    public LocalDate resolveTargetMonth(JobParameters jobParameters) {
+        return targetMonthParameterSupport.resolveTargetMonth(
+                jobParameters,
+                MonthlyUsageResetJobConstants.PARAM_TARGET_MONTH,
+                MonthlyUsageResetJobConstants.KST_ZONE_ID);
     }
 
     public LocalDate resolveTargetMonth(String targetMonth) {
-        // targetMonth 미지정 시 KST 현재 월 1일을 기본값으로 사용함
-        if (targetMonth == null || targetMonth.isBlank()) {
-            return defaultTargetMonth();
-        }
-
-        try {
-            // yyyy-MM-01 형식을 강제해 운영 파라미터 오류를 조기 차단함
-            LocalDate parsedTargetMonth = LocalDate.parse(targetMonth);
-            if (parsedTargetMonth.getDayOfMonth() != 1) {
-                throw new IllegalArgumentException(
-                        "targetMonth must be first day of month. expected yyyy-MM-01");
-            }
-            return parsedTargetMonth;
-        } catch (DateTimeParseException exception) {
-            throw new IllegalArgumentException(
-                    "Invalid targetMonth format. expected yyyy-MM-01", exception);
-        }
+        return targetMonthParameterSupport.resolveTargetMonth(
+                targetMonth, MonthlyUsageResetJobConstants.KST_ZONE_ID);
     }
 
     public long resolveNextMonthStartEpochSecond(LocalDate targetMonth) {
@@ -47,11 +33,5 @@ public class MonthlyUsageResetJobParameterSupport {
                 .plusMonths(1)
                 .atStartOfDay(MonthlyUsageResetJobConstants.KST_ZONE_ID)
                 .toEpochSecond();
-    }
-
-    private LocalDate defaultTargetMonth() {
-        return ZonedDateTime.now(MonthlyUsageResetJobConstants.KST_ZONE_ID)
-                .toLocalDate()
-                .withDayOfMonth(1);
     }
 }
