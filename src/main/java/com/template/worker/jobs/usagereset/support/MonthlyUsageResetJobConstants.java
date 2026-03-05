@@ -4,7 +4,8 @@ import java.time.ZoneId;
 
 public final class MonthlyUsageResetJobConstants {
 
-    public static final ZoneId KST_ZONE_ID = ZoneId.of("Asia/Seoul");
+    public static final String KST_ZONE_ID_NAME = "Asia/Seoul";
+    public static final ZoneId KST_ZONE_ID = ZoneId.of(KST_ZONE_ID_NAME);
 
     public static final String JOB_NAME = "monthly-usage-reset-job";
     public static final String PARAM_TARGET_MONTH = "targetMonth";

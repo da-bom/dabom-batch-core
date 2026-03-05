@@ -27,7 +27,7 @@ public class MonthlyUsageResetScheduler {
 
     @Scheduled(
             cron = "${batch.schedules.monthly-usage-reset.cron:0 1 0 1 * *}",
-            zone = "Asia/Seoul")
+            zone = MonthlyUsageResetJobConstants.KST_ZONE_ID_NAME)
     public void runMonthlyUsageResetJob() {
         Map<String, String> params = new HashMap<>();
         // 스케줄 실행 시점의 KST 월 시작일을 targetMonth로 전달
