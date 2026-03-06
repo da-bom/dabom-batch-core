@@ -11,10 +11,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 
+import com.template.worker.jobs.common.support.TargetMonthParameterSupport;
+
 class MonthlyUsageResetJobParameterSupportTest {
 
     private final MonthlyUsageResetJobParameterSupport support =
-            new MonthlyUsageResetJobParameterSupport();
+            new MonthlyUsageResetJobParameterSupport(new TargetMonthParameterSupport());
 
     @Test
     @DisplayName("resolveTargetMonth - targetMonth 파라미터가 있으면 해당 값을 반환한다")

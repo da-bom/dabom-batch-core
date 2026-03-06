@@ -13,6 +13,7 @@ public class RedisKeyGenerator {
     private static final String ALERT_KEY = "alert";
     private static final String THRESHOLD_KEY = "THRESHOLD";
     private static final String REMAINING_KEY = "remaining";
+    private static final String INFO_KEY = "info";
     private static final String USAGE_KEY = "usage";
     private static final String MONTHLY_KEY = "monthly";
     private static final DateTimeFormatter MONTH_SUFFIX_FORMATTER =
@@ -20,6 +21,10 @@ public class RedisKeyGenerator {
 
     public String familyRemainingKey(Long familyId) {
         return FAMILY_PREFIX + KEY_SEPARATOR + familyId + KEY_SEPARATOR + REMAINING_KEY;
+    }
+
+    public String familyInfoKey(Long familyId) {
+        return FAMILY_PREFIX + KEY_SEPARATOR + familyId + KEY_SEPARATOR + INFO_KEY;
     }
 
     public String familyAlertThresholdKey(Long familyId, int threshold) {

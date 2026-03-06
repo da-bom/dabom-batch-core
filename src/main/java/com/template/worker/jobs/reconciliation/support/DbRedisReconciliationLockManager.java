@@ -1,4 +1,4 @@
-package com.template.worker.jobs.usagereset.support;
+package com.template.worker.jobs.reconciliation.support;
 
 import java.time.Duration;
 
@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class MonthlyResetLockManager {
+public class DbRedisReconciliationLockManager {
 
     private final BatchLockManager batchLockManager;
 

@@ -1,4 +1,4 @@
-package com.template.worker.jobs.usagereset.support;
+package com.template.worker.jobs.reconciliation.support;
 
 import java.time.LocalDate;
 
@@ -11,27 +11,19 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class MonthlyUsageResetJobParameterSupport {
+public class DbRedisReconciliationJobParameterSupport {
 
     private final TargetMonthParameterSupport targetMonthParameterSupport;
 
     public LocalDate resolveTargetMonth(JobParameters jobParameters) {
         return targetMonthParameterSupport.resolveTargetMonth(
                 jobParameters,
-                MonthlyUsageResetJobConstants.PARAM_TARGET_MONTH,
-                MonthlyUsageResetJobConstants.KST_ZONE_ID);
+                DbRedisReconciliationJobConstants.PARAM_TARGET_MONTH,
+                DbRedisReconciliationJobConstants.KST_ZONE_ID);
     }
 
     public LocalDate resolveTargetMonth(String targetMonth) {
         return targetMonthParameterSupport.resolveTargetMonth(
-                targetMonth, MonthlyUsageResetJobConstants.KST_ZONE_ID);
-    }
-
-    public long resolveNextMonthStartEpochSecond(LocalDate targetMonth) {
-        // 다음 달 시작 epoch second를 계산해 Redis EXPIREAT에 사용함
-        return targetMonth
-                .plusMonths(1)
-                .atStartOfDay(MonthlyUsageResetJobConstants.KST_ZONE_ID)
-                .toEpochSecond();
+                targetMonth, DbRedisReconciliationJobConstants.KST_ZONE_ID);
     }
 }

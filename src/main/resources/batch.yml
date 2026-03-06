@@ -11,8 +11,15 @@ batch:
     monthly-usage-reset:
       enabled: ${BATCH_MONTHLY_USAGE_RESET_ENABLED:false}
       cron: ${BATCH_MONTHLY_USAGE_RESET_CRON:0 1 0 1 * *}
+    db-redis-reconciliation:
+      enabled: ${BATCH_DB_REDIS_RECONCILIATION_ENABLED:false}
+      cron: ${BATCH_DB_REDIS_RECONCILIATION_CRON:0 0 3 * * *}
   jobs:
     monthly-usage-reset:
       lock-ttl: ${BATCH_MONTHLY_USAGE_RESET_LOCK_TTL:PT1H}
       redis-chunk-size: ${BATCH_MONTHLY_USAGE_RESET_REDIS_CHUNK_SIZE:2000}
       db-fetch-size: ${BATCH_MONTHLY_USAGE_RESET_DB_FETCH_SIZE:4000}
+    db-redis-reconciliation:
+      lock-ttl: ${BATCH_DB_REDIS_RECONCILIATION_LOCK_TTL:PT1H}
+      redis-chunk-size: ${BATCH_DB_REDIS_RECONCILIATION_REDIS_CHUNK_SIZE:2000}
+      db-fetch-size: ${BATCH_DB_REDIS_RECONCILIATION_DB_FETCH_SIZE:4000}

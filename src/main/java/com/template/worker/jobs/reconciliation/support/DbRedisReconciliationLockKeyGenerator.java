@@ -1,4 +1,4 @@
-package com.template.worker.jobs.usagereset.support;
+package com.template.worker.jobs.reconciliation.support;
 
 import java.time.LocalDate;
 
@@ -10,12 +10,12 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class MonthlyUsageResetLockKeyGenerator {
+public class DbRedisReconciliationLockKeyGenerator {
 
-    private static final String BATCH_LOCK_PREFIX = "batch:lock:monthly-usage-reset";
+    private static final String BATCH_LOCK_PREFIX = "batch:lock:reconciliation";
     private final TargetMonthLockKeyGenerator targetMonthLockKeyGenerator;
 
-    public String monthlyResetLockKey(LocalDate targetMonth) {
+    public String reconciliationLockKey(LocalDate targetMonth) {
         return targetMonthLockKeyGenerator.targetMonthLockKey(BATCH_LOCK_PREFIX, targetMonth);
     }
 }
