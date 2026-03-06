@@ -45,7 +45,8 @@ public abstract class AbstractTargetMonthLockTasklet implements Tasklet, StepExe
             contribution.setExitStatus(new ExitStatus(lockNotAcquiredExitStatus()));
             onLockNotAcquired(jobContext);
             log.info(
-                    "Skip {} job execution because lock is already held. lockKey={}, targetMonth={}",
+                    "Skip {} job execution because lock is already held. lockKey={},"
+                            + " targetMonth={}",
                     lockLogName(),
                     lockKey,
                     targetMonth);
