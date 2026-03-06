@@ -14,6 +14,8 @@ public final class DbRedisReconciliationJobConstants {
             "acquire-reconciliation-lock-step";
     public static final String STEP_INVALIDATE_FAMILY_INFO_AND_REMAINING =
             "invalidate-family-info-and-remaining-step";
+    public static final String STEP_INVALIDATE_CUSTOMER_MONTHLY_USAGE =
+            "invalidate-customer-monthly-usage-step";
     public static final String STEP_RELEASE_RECONCILIATION_LOCK =
             "release-reconciliation-lock-step";
 
@@ -32,6 +34,8 @@ public final class DbRedisReconciliationJobConstants {
     public static final String STEP_CONTEXT_DELETED_FAMILY_INFO_COUNT = "deletedFamilyInfoCount";
     public static final String STEP_CONTEXT_DELETED_FAMILY_REMAINING_COUNT =
             "deletedFamilyRemainingCount";
+    public static final String STEP_CONTEXT_DELETED_CUSTOMER_MONTHLY_USAGE_COUNT =
+            "deletedCustomerMonthlyUsageCount";
 
     private DbRedisReconciliationJobConstants() {}
 }
