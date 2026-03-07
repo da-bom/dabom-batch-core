@@ -22,7 +22,9 @@ public class DbRedisReconciliationJobListener implements JobExecutionListener {
     private final DbRedisReconciliationLockManager lockManager;
 
     @Override
-    public void beforeJob(JobExecution jobExecution) {}
+    public void beforeJob(JobExecution jobExecution) {
+        // 이 리스너는 잡 시작 전 선행 작업이 없고 종료 후 요약/락 정리만 담당함
+    }
 
     @Override
     public void afterJob(JobExecution jobExecution) {
