@@ -36,11 +36,11 @@ public class MonthlyUsageResetJobListener implements JobExecutionListener {
                         jobExecution
                                 .getJobParameters()
                                 .getString(MonthlyUsageResetJobConstants.PARAM_TARGET_MONTH),
-                        "default");
+                        MonthlyUsageResetJobConstants.JOB_CONTEXT_TARGET_MONTH_DEFAULT);
         String targetMonth =
                 jobContext.getString(
                         MonthlyUsageResetJobConstants.JOB_CONTEXT_TARGET_MONTH,
-                        MonthlyUsageResetJobConstants.JOB_CONTEXT_TARGET_MONTH_DEFAULT);
+                        targetMonthFromParam);
 
         long dbUpdatedCount =
                 jobContext.getLong(
