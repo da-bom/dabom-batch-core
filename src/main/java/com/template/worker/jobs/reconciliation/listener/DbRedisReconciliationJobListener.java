@@ -35,7 +35,7 @@ public class DbRedisReconciliationJobListener implements JobExecutionListener {
                         jobExecution
                                 .getJobParameters()
                                 .getString(DbRedisReconciliationJobConstants.PARAM_TARGET_MONTH),
-                        "default");
+                        DbRedisReconciliationJobConstants.JOB_CONTEXT_TARGET_MONTH_DEFAULT);
         String targetMonth =
                 jobContext.getString(
                         DbRedisReconciliationJobConstants.JOB_CONTEXT_TARGET_MONTH,
