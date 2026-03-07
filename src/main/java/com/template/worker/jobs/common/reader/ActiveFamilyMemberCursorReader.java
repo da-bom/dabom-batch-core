@@ -13,6 +13,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 public class ActiveFamilyMemberCursorReader<T> implements ItemReader<T>, StepExecutionListener {
 
+    private static final String COLUMN_ID = "id";
+    private static final String COLUMN_FAMILY_ID = "family_id";
+    private static final String COLUMN_CUSTOMER_ID = "customer_id";
+
     private static final String READ_ACTIVE_FAMILY_MEMBER_SQL =
             """
             SELECT id, family_id, customer_id
@@ -55,9 +59,9 @@ public class ActiveFamilyMemberCursorReader<T> implements ItemReader<T>, StepExe
                             READ_ACTIVE_FAMILY_MEMBER_SQL,
                             (resultSet, rowNum) ->
                                     new FamilyMemberRow(
-                                            resultSet.getLong("id"),
-                                            resultSet.getLong("family_id"),
-                                            resultSet.getLong("customer_id")),
+                                            resultSet.getLong(COLUMN_ID),
+                                            resultSet.getLong(COLUMN_FAMILY_ID),
+                                            resultSet.getLong(COLUMN_CUSTOMER_ID)),
                             lastFamilyMemberId,
                             dbFetchSizeSupplier.getAsInt());
 

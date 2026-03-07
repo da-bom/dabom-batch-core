@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 public class ActiveFamilyCursorReader implements ItemReader<Long>, StepExecutionListener {
 
+    private static final String COLUMN_ID = "id";
     private static final String READ_ACTIVE_FAMILY_SQL =
             """
             SELECT id
@@ -47,7 +48,7 @@ public class ActiveFamilyCursorReader implements ItemReader<Long>, StepExecution
             List<Long> familyIds =
                     jdbcTemplate.query(
                             READ_ACTIVE_FAMILY_SQL,
-                            (resultSet, rowNum) -> resultSet.getLong("id"),
+                            (resultSet, rowNum) -> resultSet.getLong(COLUMN_ID),
                             lastFamilyId,
                             dbFetchSizeSupplier.getAsInt());
 
