@@ -41,7 +41,7 @@ class ReconciliationLockTaskletTest {
 
     @Test
     @DisplayName("execute - 락 미획득 시 LOCK_NOT_ACQUIRED로 종료한다")
-    void execute_lockNotAcquired_setsLockNotAcquiredExitStatus() throws Exception {
+    void execute_lockNotAcquired_setsLockNotAcquiredExitStatus() {
         JobParameters jobParameters =
                 new JobParametersBuilder().addString("targetMonth", "2026-03-01").toJobParameters();
         JobInstance jobInstance = new JobInstance(1L, "dbRedisReconciliationJob");
@@ -81,7 +81,7 @@ class ReconciliationLockTaskletTest {
 
     @Test
     @DisplayName("execute - 락 획득 시 다음 스텝으로 진행한다")
-    void execute_lockAcquired_setsAcquiredStatus() throws Exception {
+    void execute_lockAcquired_setsAcquiredStatus() {
         JobParameters jobParameters =
                 new JobParametersBuilder().addString("targetMonth", "2026-03-01").toJobParameters();
         JobInstance jobInstance = new JobInstance(2L, "dbRedisReconciliationJob");

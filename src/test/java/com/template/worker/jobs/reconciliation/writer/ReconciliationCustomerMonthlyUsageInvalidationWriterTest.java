@@ -3,7 +3,6 @@ package com.template.worker.jobs.reconciliation.writer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -90,6 +89,6 @@ class ReconciliationCustomerMonthlyUsageInvalidationWriterTest {
         verify(keyGenerator, never()).customerMonthlyUsageKey(anyLong(), anyLong());
         verify(keyGenerator, never()).familyInfoKey(anyLong());
         verify(keyGenerator, never()).familyRemainingKey(anyLong());
-        verify(parameterSupport).resolveTargetMonth(eq(jobParameters));
+        verify(parameterSupport).resolveTargetMonth(jobParameters);
     }
 }
