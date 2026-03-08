@@ -41,7 +41,7 @@ class MonthlyResetLockTaskletTest {
 
     @Test
     @DisplayName("execute - 락 미획득 시 LOCK_NOT_ACQUIRED로 종료한다")
-    void execute_lockNotAcquired_setsLockNotAcquiredExitStatus() throws Exception {
+    void execute_lockNotAcquired_setsLockNotAcquiredExitStatus() {
         // given
         JobParameters jobParameters =
                 new JobParametersBuilder().addString("targetMonth", "2026-03-01").toJobParameters();

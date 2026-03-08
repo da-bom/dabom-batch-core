@@ -7,7 +7,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.template.worker.global.listener.JobResultListener;
+import com.template.worker.jobs.reconciliation.listener.DbRedisReconciliationJobListener;
 import com.template.worker.jobs.reconciliation.step.AcquireReconciliationLockStepConfig;
+import com.template.worker.jobs.reconciliation.step.InvalidateCustomerMonthlyUsageStepConfig;
 import com.template.worker.jobs.reconciliation.step.InvalidateFamilyInfoAndRemainingStepConfig;
 import com.template.worker.jobs.reconciliation.step.ReleaseReconciliationLockStepConfig;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
@@ -20,15 +22,18 @@ public class DbRedisReconciliationJobConfig {
 
     private final JobRepository jobRepository;
     private final JobResultListener jobResultListener;
+    private final DbRedisReconciliationJobListener dbRedisReconciliationJobListener;
     private final AcquireReconciliationLockStepConfig acquireReconciliationLockStepConfig;
     private final InvalidateFamilyInfoAndRemainingStepConfig
             invalidateFamilyInfoAndRemainingStepConfig;
+    private final InvalidateCustomerMonthlyUsageStepConfig invalidateCustomerMonthlyUsageStepConfig;
     private final ReleaseReconciliationLockStepConfig releaseReconciliationLockStepConfig;
 
     @Bean
     public Job dbRedisReconciliationJob() {
         return new JobBuilder(DbRedisReconciliationJobConstants.JOB_NAME, jobRepository)
                 .listener(jobResultListener)
+                .listener(dbRedisReconciliationJobListener)
                 .start(acquireReconciliationLockStepConfig.acquireReconciliationLockStep())
                 // 락 미획득이면 정상 종료해 중복 실행을 방지함
                 .on(DbRedisReconciliationJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
@@ -42,6 +47,7 @@ public class DbRedisReconciliationJobConfig {
                 .to(
                         invalidateFamilyInfoAndRemainingStepConfig
                                 .invalidateFamilyInfoAndRemainingStep())
+                .next(invalidateCustomerMonthlyUsageStepConfig.invalidateCustomerMonthlyUsageStep())
                 .next(releaseReconciliationLockStepConfig.releaseReconciliationLockStep())
                 .end()
                 .build();

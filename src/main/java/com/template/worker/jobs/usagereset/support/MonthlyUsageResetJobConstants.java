@@ -21,6 +21,7 @@ public final class MonthlyUsageResetJobConstants {
     public static final String EXIT_STATUS_LOCK_NOT_ACQUIRED = "LOCK_NOT_ACQUIRED";
 
     public static final String JOB_CONTEXT_TARGET_MONTH = "targetMonth";
+    public static final String JOB_CONTEXT_TARGET_MONTH_DEFAULT = "default";
     public static final String JOB_CONTEXT_LOCK_KEY = "lockKey";
     public static final String JOB_CONTEXT_LOCK_OWNER = "lockOwner";
     public static final String JOB_CONTEXT_DB_UPDATED_FAMILY_COUNT = "dbUpdatedFamilyCount";

@@ -14,12 +14,15 @@ public final class DbRedisReconciliationJobConstants {
             "acquire-reconciliation-lock-step";
     public static final String STEP_INVALIDATE_FAMILY_INFO_AND_REMAINING =
             "invalidate-family-info-and-remaining-step";
+    public static final String STEP_INVALIDATE_CUSTOMER_MONTHLY_USAGE =
+            "invalidate-customer-monthly-usage-step";
     public static final String STEP_RELEASE_RECONCILIATION_LOCK =
             "release-reconciliation-lock-step";
 
     public static final String EXIT_STATUS_LOCK_NOT_ACQUIRED = "LOCK_NOT_ACQUIRED";
 
     public static final String JOB_CONTEXT_TARGET_MONTH = "targetMonth";
+    public static final String JOB_CONTEXT_TARGET_MONTH_DEFAULT = "default";
     public static final String JOB_CONTEXT_LOCK_KEY = "lockKey";
     public static final String JOB_CONTEXT_LOCK_OWNER = "lockOwner";
     public static final String JOB_CONTEXT_LOCK_STATUS = "lockStatus";
@@ -32,6 +35,8 @@ public final class DbRedisReconciliationJobConstants {
     public static final String STEP_CONTEXT_DELETED_FAMILY_INFO_COUNT = "deletedFamilyInfoCount";
     public static final String STEP_CONTEXT_DELETED_FAMILY_REMAINING_COUNT =
             "deletedFamilyRemainingCount";
+    public static final String STEP_CONTEXT_DELETED_CUSTOMER_MONTHLY_USAGE_COUNT =
+            "deletedCustomerMonthlyUsageCount";
 
     private DbRedisReconciliationJobConstants() {}
 }
