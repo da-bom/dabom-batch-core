@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -145,13 +146,21 @@ public class WeeklyFamilyRecapAggregationRepository {
     }
 
     private long readLong(String sql, MapSqlParameterSource params) {
-        Long value = jdbcTemplate.queryForObject(sql, params, Long.class);
-        return value == null ? 0L : value;
+        try {
+            Long value = jdbcTemplate.queryForObject(sql, params, Long.class);
+            return value == null ? 0L : value;
+        } catch (EmptyResultDataAccessException e) {
+            return 0L;
+        }
     }
 
     private int readInt(String sql, MapSqlParameterSource params) {
-        Integer value = jdbcTemplate.queryForObject(sql, params, Integer.class);
-        return value == null ? 0 : value;
+        try {
+            Integer value = jdbcTemplate.queryForObject(sql, params, Integer.class);
+            return value == null ? 0 : value;
+        } catch (EmptyResultDataAccessException e) {
+            return 0;
+        }
     }
 
     private Map<String, Long> readUsageByWeekday(MapSqlParameterSource params) {
