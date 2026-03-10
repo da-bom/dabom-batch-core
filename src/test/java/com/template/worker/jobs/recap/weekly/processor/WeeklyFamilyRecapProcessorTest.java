@@ -3,6 +3,7 @@ package com.template.worker.jobs.recap.weekly.processor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
@@ -22,6 +24,8 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.StepExecution;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapRow;
 import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapSourceMetrics;
 import com.template.worker.jobs.recap.weekly.model.WeeklyPeakUsage;
@@ -33,6 +37,7 @@ class WeeklyFamilyRecapProcessorTest {
 
     @Mock private WeeklyFamilyRecapAggregationRepository aggregationRepository;
     @Mock private WeekStartDateParameterSupport parameterSupport;
+    @Spy private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks private WeeklyFamilyRecapProcessor processor;
 
@@ -125,5 +130,45 @@ class WeeklyFamilyRecapProcessorTest {
         assertThatThrownBy(() -> processor.process(10L))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("cannot be negative");
+    }
+
+    @Test
+    @DisplayName("process - JSON 직렬화에 실패하면 예외가 발생한다")
+    void process_whenJsonSerializationFails_throwsException() throws Exception {
+        JobExecution jobExecution =
+                new JobExecution(
+                        new JobInstance(1L, "weekly-family-recap-job"),
+                        new JobParametersBuilder()
+                                .addString("weekStartDate", "2026-03-02")
+                                .toJobParameters());
+        StepExecution stepExecution =
+                new StepExecution("aggregate-weekly-recap-step", jobExecution);
+
+        LocalDate weekStartDate = LocalDate.of(2026, 3, 2);
+        when(parameterSupport.resolveWeekStartDate(any(JobParameters.class)))
+                .thenReturn(weekStartDate);
+
+        WeeklyFamilyRecapSourceMetrics sourceMetrics =
+                new WeeklyFamilyRecapSourceMetrics(
+                        1000L,
+                        4000L,
+                        Map.of("monday", 1000L),
+                        new WeeklyPeakUsage(21, 22, 500L),
+                        0,
+                        0,
+                        0,
+                        0);
+        when(aggregationRepository.aggregate(10L, weekStartDate)).thenReturn(sourceMetrics);
+
+        doThrow(new JsonProcessingException("serialize fail") {})
+                .when(objectMapper)
+                .writeValueAsString(any());
+
+        processor.beforeStep(stepExecution);
+
+        assertThatThrownBy(() -> processor.process(10L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Failed to serialize")
+                .hasMessageContaining("familyId=10");
     }
 }

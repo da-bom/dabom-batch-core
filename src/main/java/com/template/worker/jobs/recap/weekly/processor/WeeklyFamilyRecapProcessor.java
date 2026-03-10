@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +13,8 @@ import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapRow;
 import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapSourceMetrics;
 import com.template.worker.jobs.recap.weekly.model.WeeklyPeakUsage;
@@ -30,6 +33,7 @@ public class WeeklyFamilyRecapProcessor
 
     private final WeeklyFamilyRecapAggregationRepository aggregationRepository;
     private final WeekStartDateParameterSupport parameterSupport;
+    private final ObjectMapper objectMapper;
 
     private LocalDate weekStartDate;
 
@@ -52,8 +56,10 @@ public class WeeklyFamilyRecapProcessor
                 calculatePercent(sourceMetrics.totalUsedBytes(), sourceMetrics.totalQuotaBytes());
         String usageByWeekdayJson =
                 buildUsageByWeekdayJson(
-                        sourceMetrics.usageBytesByWeekday(), sourceMetrics.totalUsedBytes());
-        String peakUsageJson = buildPeakUsageJson(sourceMetrics.peakUsage());
+                        familyId,
+                        sourceMetrics.usageBytesByWeekday(),
+                        sourceMetrics.totalUsedBytes());
+        String peakUsageJson = buildPeakUsageJson(familyId, sourceMetrics.peakUsage());
 
         // 업서트 모델로 변환
         return new WeeklyFamilyRecapRow(
@@ -89,35 +95,29 @@ public class WeeklyFamilyRecapProcessor
     }
 
     private String buildUsageByWeekdayJson(
-            Map<String, Long> usageBytesByWeekday, long totalUsedBytes) {
-        // 7요일 고정 순서로 퍼센트 JSON 생성
-        StringBuilder builder = new StringBuilder("{");
-        for (int index = 0; index < WEEKDAY_KEYS.size(); index++) {
-            String weekday = WEEKDAY_KEYS.get(index);
+            Long familyId, Map<String, Long> usageBytesByWeekday, long totalUsedBytes) {
+        // 7요일 고정 순서로 퍼센트 맵을 만들고 JSON 직렬화
+        Map<String, BigDecimal> usageByWeekday = new LinkedHashMap<>();
+        for (String weekday : WEEKDAY_KEYS) {
             long weekdayUsedBytes = usageBytesByWeekday.getOrDefault(weekday, 0L);
-            BigDecimal percent = calculatePercent(weekdayUsedBytes, totalUsedBytes);
-            builder.append('"')
-                    .append(weekday)
-                    .append('"')
-                    .append(':')
-                    .append(percent.toPlainString());
-            if (index < WEEKDAY_KEYS.size() - 1) {
-                builder.append(',');
-            }
+            usageByWeekday.put(weekday, calculatePercent(weekdayUsedBytes, totalUsedBytes));
         }
-        builder.append('}');
-        return builder.toString();
+        return toJson(familyId, usageByWeekday, "usageByWeekday");
     }
 
-    private String buildPeakUsageJson(WeeklyPeakUsage peakUsage) {
-        // 주간 피크 정보를 단일 JSON으로 직렬화
-        return "{\"startHour\":"
-                + peakUsage.startHour()
-                + ",\"endHour\":"
-                + peakUsage.endHour()
-                + ",\"peakBytes\":"
-                + peakUsage.peakBytes()
-                + "}";
+    private String buildPeakUsageJson(Long familyId, WeeklyPeakUsage peakUsage) {
+        // 주간 피크 정보를 JSON으로 직렬화
+        return toJson(familyId, peakUsage, "peakUsage");
+    }
+
+    private String toJson(Long familyId, Object target, String targetName) {
+        try {
+            return objectMapper.writeValueAsString(target);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException(
+                    "Failed to serialize " + targetName + " to JSON. familyId=" + familyId,
+                    exception);
+        }
     }
 
     private BigDecimal calculatePercent(long numerator, long denominator) {
