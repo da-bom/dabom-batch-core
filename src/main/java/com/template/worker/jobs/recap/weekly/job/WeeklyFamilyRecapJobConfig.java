@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import com.template.worker.global.listener.JobResultListener;
 import com.template.worker.jobs.recap.weekly.listener.WeeklyFamilyRecapJobListener;
 import com.template.worker.jobs.recap.weekly.step.AcquireWeeklyFamilyRecapLockStepConfig;
-import com.template.worker.jobs.recap.weekly.step.AggregateWeeklyFamilyRecapStepConfig;
+import com.template.worker.jobs.recap.weekly.step.ProcessWeeklyFamilyRecapStepConfig;
 import com.template.worker.jobs.recap.weekly.step.ReleaseWeeklyFamilyRecapLockStepConfig;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapJobConstants;
 
@@ -23,7 +23,7 @@ public class WeeklyFamilyRecapJobConfig {
     private final JobResultListener jobResultListener;
     private final WeeklyFamilyRecapJobListener weeklyFamilyRecapJobListener;
     private final AcquireWeeklyFamilyRecapLockStepConfig acquireWeeklyFamilyRecapLockStepConfig;
-    private final AggregateWeeklyFamilyRecapStepConfig aggregateWeeklyFamilyRecapStepConfig;
+    private final ProcessWeeklyFamilyRecapStepConfig processWeeklyFamilyRecapStepConfig;
     private final ReleaseWeeklyFamilyRecapLockStepConfig releaseWeeklyFamilyRecapLockStepConfig;
 
     @Bean
@@ -40,7 +40,7 @@ public class WeeklyFamilyRecapJobConfig {
                 .fail()
                 .from(acquireWeeklyFamilyRecapLockStepConfig.acquireWeeklyFamilyRecapLockStep())
                 .on("*")
-                .to(aggregateWeeklyFamilyRecapStepConfig.aggregateWeeklyFamilyRecapStep())
+                .to(processWeeklyFamilyRecapStepConfig.processWeeklyFamilyRecapStep())
                 .next(releaseWeeklyFamilyRecapLockStepConfig.releaseWeeklyFamilyRecapLockStep())
                 .end()
                 .build();

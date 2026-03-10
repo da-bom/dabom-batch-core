@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @RequiredArgsConstructor
-public class AggregateWeeklyFamilyRecapStepConfig {
+public class ProcessWeeklyFamilyRecapStepConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
@@ -28,10 +28,10 @@ public class AggregateWeeklyFamilyRecapStepConfig {
     private final WeeklyFamilyRecapProperties properties;
 
     @Bean
-    public Step aggregateWeeklyFamilyRecapStep() {
+    public Step processWeeklyFamilyRecapStep() {
         // 활성 가족을 읽어 집계 후 즉시 업서트하는 청크 스텝
         return new StepBuilder(
-                        WeeklyFamilyRecapJobConstants.STEP_AGGREGATE_WEEKLY_RECAP, jobRepository)
+                        WeeklyFamilyRecapJobConstants.STEP_PROCESS_WEEKLY_RECAP, jobRepository)
                 .<Long, WeeklyFamilyRecapRow>chunk(properties.getChunkSize(), transactionManager)
                 .reader(reader)
                 .processor(processor)

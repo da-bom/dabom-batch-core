@@ -50,8 +50,7 @@ class WeeklyFamilyRecapProcessorTest {
                         new JobParametersBuilder()
                                 .addString("weekStartDate", "2026-03-02")
                                 .toJobParameters());
-        StepExecution stepExecution =
-                new StepExecution("aggregate-weekly-recap-step", jobExecution);
+        StepExecution stepExecution = new StepExecution("process-weekly-recap-step", jobExecution);
 
         LocalDate weekStartDate = LocalDate.of(2026, 3, 2);
         when(parameterSupport.resolveWeekStartDate(any(JobParameters.class)))
@@ -105,8 +104,7 @@ class WeeklyFamilyRecapProcessorTest {
                         new JobParametersBuilder()
                                 .addString("weekStartDate", "2026-03-02")
                                 .toJobParameters());
-        StepExecution stepExecution =
-                new StepExecution("aggregate-weekly-recap-step", jobExecution);
+        StepExecution stepExecution = new StepExecution("process-weekly-recap-step", jobExecution);
 
         LocalDate weekStartDate = LocalDate.of(2026, 3, 2);
         when(parameterSupport.resolveWeekStartDate(any(JobParameters.class)))
@@ -141,8 +139,7 @@ class WeeklyFamilyRecapProcessorTest {
                         new JobParametersBuilder()
                                 .addString("weekStartDate", "2026-03-02")
                                 .toJobParameters());
-        StepExecution stepExecution =
-                new StepExecution("aggregate-weekly-recap-step", jobExecution);
+        StepExecution stepExecution = new StepExecution("process-weekly-recap-step", jobExecution);
 
         LocalDate weekStartDate = LocalDate.of(2026, 3, 2);
         when(parameterSupport.resolveWeekStartDate(any(JobParameters.class)))

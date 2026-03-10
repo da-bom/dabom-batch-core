@@ -45,7 +45,7 @@ public class WeeklyFamilyRecapJobListener implements JobExecutionListener {
 
         long upsertedCount =
                 findStepWriteCount(
-                        jobExecution, WeeklyFamilyRecapJobConstants.STEP_AGGREGATE_WEEKLY_RECAP);
+                        jobExecution, WeeklyFamilyRecapJobConstants.STEP_PROCESS_WEEKLY_RECAP);
 
         int failureCount = jobExecution.getAllFailureExceptions().size();
         log.info(
