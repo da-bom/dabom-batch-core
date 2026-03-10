@@ -15,7 +15,6 @@ public final class WeeklyFamilyRecapJobConstants {
     // 스텝 이름
     public static final String STEP_ACQUIRE_WEEKLY_RECAP_LOCK = "acquire-weekly-recap-lock-step";
     public static final String STEP_AGGREGATE_WEEKLY_RECAP = "aggregate-weekly-recap-step";
-    public static final String STEP_UPSERT_WEEKLY_RECAP = "upsert-weekly-recap-step";
     public static final String STEP_RELEASE_WEEKLY_RECAP_LOCK = "release-weekly-recap-lock-step";
 
     // 락 미획득 종료 코드

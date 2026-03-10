@@ -11,7 +11,6 @@ import com.template.worker.jobs.recap.weekly.listener.WeeklyFamilyRecapJobListen
 import com.template.worker.jobs.recap.weekly.step.AcquireWeeklyFamilyRecapLockStepConfig;
 import com.template.worker.jobs.recap.weekly.step.AggregateWeeklyFamilyRecapStepConfig;
 import com.template.worker.jobs.recap.weekly.step.ReleaseWeeklyFamilyRecapLockStepConfig;
-import com.template.worker.jobs.recap.weekly.step.UpsertWeeklyFamilyRecapStepConfig;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapJobConstants;
 
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ public class WeeklyFamilyRecapJobConfig {
     private final WeeklyFamilyRecapJobListener weeklyFamilyRecapJobListener;
     private final AcquireWeeklyFamilyRecapLockStepConfig acquireWeeklyFamilyRecapLockStepConfig;
     private final AggregateWeeklyFamilyRecapStepConfig aggregateWeeklyFamilyRecapStepConfig;
-    private final UpsertWeeklyFamilyRecapStepConfig upsertWeeklyFamilyRecapStepConfig;
     private final ReleaseWeeklyFamilyRecapLockStepConfig releaseWeeklyFamilyRecapLockStepConfig;
 
     @Bean
@@ -43,7 +41,6 @@ public class WeeklyFamilyRecapJobConfig {
                 .from(acquireWeeklyFamilyRecapLockStepConfig.acquireWeeklyFamilyRecapLockStep())
                 .on("*")
                 .to(aggregateWeeklyFamilyRecapStepConfig.aggregateWeeklyFamilyRecapStep())
-                .next(upsertWeeklyFamilyRecapStepConfig.upsertWeeklyFamilyRecapStep())
                 .next(releaseWeeklyFamilyRecapLockStepConfig.releaseWeeklyFamilyRecapLockStep())
                 .end()
                 .build();
