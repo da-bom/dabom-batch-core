@@ -72,11 +72,10 @@ public class WeeklyFamilyRecapJobListener implements JobExecutionListener {
 
     private long findStepWriteCount(JobExecution jobExecution, String stepName) {
         // 집계 스텝 writeCount를 조회해 처리 건수로 사용
-        for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
-            if (stepExecution.getStepName().equals(stepName)) {
-                return stepExecution.getWriteCount();
-            }
-        }
-        return 0L;
+        return jobExecution.getStepExecutions().stream()
+                .filter(step -> step.getStepName().equals(stepName))
+                .findFirst()
+                .map(StepExecution::getWriteCount)
+                .orElse(0L);
     }
 }
