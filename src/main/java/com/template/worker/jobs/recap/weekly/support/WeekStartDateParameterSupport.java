@@ -43,7 +43,7 @@ public class WeekStartDateParameterSupport {
         }
     }
 
-    private LocalDate defaultWeekStartDate() {
+    public LocalDate defaultWeekStartDate() {
         // 현재 주 월요일에서 1주를 빼 직전 주 시작일을 계산
         LocalDate today =
                 ZonedDateTime.now(WeeklyFamilyRecapJobConstants.KST_ZONE_ID).toLocalDate();

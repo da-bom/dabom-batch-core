@@ -32,7 +32,7 @@ public class WeeklyFamilyRecapScheduler {
     public void runWeeklyFamilyRecapJob() {
         Map<String, String> params = new HashMap<>();
         // 스케줄 실행 시점 기준 직전 주 월요일을 기본 파라미터로 전달
-        String weekStartDate = parameterSupport.resolveWeekStartDate((String) null).toString();
+        String weekStartDate = parameterSupport.defaultWeekStartDate().toString();
         params.put(WeeklyFamilyRecapJobConstants.PARAM_WEEK_START_DATE, weekStartDate);
 
         try {
