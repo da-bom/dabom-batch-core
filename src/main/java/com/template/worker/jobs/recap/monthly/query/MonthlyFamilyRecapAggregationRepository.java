@@ -187,6 +187,6 @@ public class MonthlyFamilyRecapAggregationRepository {
     }
 
     private String toJsonString(Object value) {
-        return value == null ? "{}" : String.valueOf(value);
+        return value == null ? null : String.valueOf(value);
     }
 }
