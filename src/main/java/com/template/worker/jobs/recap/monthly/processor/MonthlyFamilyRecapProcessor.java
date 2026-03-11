@@ -124,10 +124,6 @@ public class MonthlyFamilyRecapProcessor
 
     private void validateSourceMetrics(
             Long familyId, MonthlyFamilyRecapSourceMetrics sourceMetrics) {
-        if (targetMonth.getDayOfMonth() != 1) {
-            throw new IllegalStateException(
-                    "targetMonth must be first day of month. familyId=" + familyId);
-        }
         if (sourceMetrics.totalQuotaBytes() < 0) {
             throw new IllegalStateException(
                     "Quota snapshot cannot be negative. familyId=" + familyId);
