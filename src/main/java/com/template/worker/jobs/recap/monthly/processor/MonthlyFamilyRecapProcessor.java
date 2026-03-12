@@ -15,9 +15,14 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.template.worker.jobs.recap.monthly.model.MonthlyAppealHighlights;
+import com.template.worker.jobs.recap.monthly.model.MonthlyAppealSummary;
 import com.template.worker.jobs.recap.monthly.model.MonthlyFamilyRecapRow;
 import com.template.worker.jobs.recap.monthly.model.MonthlyFamilyRecapSourceMetrics;
+import com.template.worker.jobs.recap.monthly.model.MonthlyMissionSummary;
 import com.template.worker.jobs.recap.monthly.model.MonthlyPeakUsage;
+import com.template.worker.jobs.recap.monthly.model.MonthlyUsagePeakCandidate;
+import com.template.worker.jobs.recap.monthly.model.MonthlyUsageSupplementMetrics;
 import com.template.worker.jobs.recap.monthly.model.MonthlyWeeklyRecapSnapshot;
 import com.template.worker.jobs.recap.monthly.query.MonthlyFamilyRecapAggregationRepository;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapJobParameterSupport;
@@ -54,59 +59,46 @@ public class MonthlyFamilyRecapProcessor
         validateSourceMetrics(familyId, sourceMetrics);
 
         List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots = sourceMetrics.fullWeekSnapshots();
+        MonthlyUsageSupplementMetrics partialUsageMetrics =
+                normalizePartialUsageMetrics(sourceMetrics);
+        MonthlyMissionSummary missionSummary = normalizeMissionSummary(sourceMetrics);
+        MonthlyAppealSummary appealSummary = normalizeAppealSummary(sourceMetrics);
+        MonthlyAppealHighlights appealHighlights = normalizeAppealHighlights(sourceMetrics);
 
-        // 이번 이슈 범위에서는 full week 합산값만 월간 사용량에 반영
+        // 월 사용량은 full week snapshot 합계에 partial raw usage를 더해 만듦
         long totalUsedBytes =
                 fullWeekSnapshots.stream()
-                        .mapToLong(MonthlyWeeklyRecapSnapshot::totalUsedBytes)
-                        .sum();
+                                .mapToLong(MonthlyWeeklyRecapSnapshot::totalUsedBytes)
+                                .sum()
+                        + partialUsageMetrics.totalUsedBytes();
         long totalQuotaBytes = sourceMetrics.totalQuotaBytes();
         BigDecimal usageRatePercent = calculatePercent(totalUsedBytes, totalQuotaBytes);
 
         // 주간 퍼센트 평균이 아니라 주간 사용량 가중합으로 월간 요일 비율 계산
         Map<String, BigDecimal> usageByWeekday =
-                aggregateUsageByWeekday(familyId, fullWeekSnapshots);
+                aggregateUsageByWeekday(
+                        familyId, fullWeekSnapshots, partialUsageMetrics, totalUsedBytes);
         String usageByWeekdayJson = toJson(familyId, usageByWeekday, "usageByWeekday");
 
         String mostUsedWeekday = resolveMostUsedWeekday(usageByWeekday);
         MonthlyPeakUsage peakUsage =
-                aggregatePeakUsage(familyId, fullWeekSnapshots, mostUsedWeekday);
+                aggregatePeakUsage(
+                        familyId, fullWeekSnapshots, partialUsageMetrics, mostUsedWeekday);
         String peakUsageJson = toJson(familyId, peakUsage, "peakUsage");
 
-        int totalMissionCount =
-                fullWeekSnapshots.stream()
-                        .mapToInt(MonthlyWeeklyRecapSnapshot::missionCreatedCount)
-                        .sum();
-        int completedMissionCount =
-                fullWeekSnapshots.stream()
-                        .mapToInt(MonthlyWeeklyRecapSnapshot::missionCompletedCount)
-                        .sum();
-        int rejectedRequestCount =
-                fullWeekSnapshots.stream()
-                        .mapToInt(MonthlyWeeklyRecapSnapshot::missionRejectedCount)
-                        .sum();
+        // mission/appeal은 repository에서 이미 월 raw 기준으로 정리해 두고, 여기서는 JSON 직렬화만 맡음
+        String missionSummaryJson = toJson(familyId, missionSummary, "missionSummary");
+        String appealSummaryJson = toJson(familyId, appealSummary, "appealSummary");
+        String appealHighlightsJson = toJson(familyId, appealHighlights, "appealHighlights");
 
-        String missionSummaryJson =
-                buildMissionSummaryJson(
-                        familyId, totalMissionCount, completedMissionCount, rejectedRequestCount);
-
-        // full week snapshot에서 합산한 이의제기 요약을 월간 JSON으로 변환
-        String appealSummaryJson =
-                buildAppealSummaryJson(
-                        familyId,
-                        sourceMetrics.totalAppeals(),
-                        sourceMetrics.approvedAppeals(),
-                        sourceMetrics.rejectedAppeals());
-
-        String appealHighlightsJson = buildDefaultAppealHighlightsJson(familyId);
-
+        // communication score는 raw mission/appeal summary를 그대로 사용해 월 기준 공식을 적용
         BigDecimal communicationScore =
                 calculateCommunicationScore(
-                        sourceMetrics.approvedAppeals(),
-                        sourceMetrics.rejectedAppeals(),
-                        sourceMetrics.totalAppeals(),
-                        totalMissionCount,
-                        completedMissionCount);
+                        appealSummary.approvedAppeals(),
+                        appealSummary.rejectedAppeals(),
+                        appealSummary.totalAppeals(),
+                        missionSummary.totalMissionCount(),
+                        missionSummary.completedMissionCount());
 
         // 업서트 모델로 변환
         return new MonthlyFamilyRecapRow(
@@ -129,11 +121,42 @@ public class MonthlyFamilyRecapProcessor
             throw new IllegalStateException(
                     "Quota snapshot cannot be negative. familyId=" + familyId);
         }
-        if (sourceMetrics.totalAppeals() < 0
-                || sourceMetrics.approvedAppeals() < 0
-                || sourceMetrics.rejectedAppeals() < 0) {
+
+        MonthlyUsageSupplementMetrics partialUsageMetrics =
+                normalizePartialUsageMetrics(sourceMetrics);
+        if (partialUsageMetrics.totalUsedBytes() < 0
+                || partialUsageMetrics.peakUsageCandidate().peakBytes() < 0) {
+            throw new IllegalStateException(
+                    "Partial usage aggregate cannot be negative. familyId=" + familyId);
+        }
+        for (Long bytes : partialUsageMetrics.usageBytesByWeekday().values()) {
+            if (bytes != null && bytes < 0) {
+                throw new IllegalStateException(
+                        "Partial weekday usage cannot be negative. familyId=" + familyId);
+            }
+        }
+
+        MonthlyMissionSummary missionSummary = normalizeMissionSummary(sourceMetrics);
+        if (missionSummary.totalMissionCount() < 0
+                || missionSummary.completedMissionCount() < 0
+                || missionSummary.rejectedRequestCount() < 0) {
+            throw new IllegalStateException(
+                    "Mission aggregate cannot be negative. familyId=" + familyId);
+        }
+
+        MonthlyAppealSummary appealSummary = normalizeAppealSummary(sourceMetrics);
+        if (appealSummary.totalAppeals() < 0
+                || appealSummary.approvedAppeals() < 0
+                || appealSummary.rejectedAppeals() < 0) {
             throw new IllegalStateException(
                     "Appeal aggregate cannot be negative. familyId=" + familyId);
+        }
+
+        MonthlyAppealHighlights appealHighlights = normalizeAppealHighlights(sourceMetrics);
+        if (appealHighlights.topSuccessfulRequester().approvedAppealCount() < 0
+                || appealHighlights.topAcceptedApprover().approvedAppealCount() < 0) {
+            throw new IllegalStateException(
+                    "Appeal highlight aggregate cannot be negative. familyId=" + familyId);
         }
 
         for (MonthlyWeeklyRecapSnapshot snapshot : sourceMetrics.fullWeekSnapshots()) {
@@ -143,20 +166,49 @@ public class MonthlyFamilyRecapProcessor
             }
             if (snapshot.missionCreatedCount() < 0
                     || snapshot.missionCompletedCount() < 0
-                    || snapshot.missionRejectedCount() < 0
-                    || snapshot.totalAppealCount() < 0
-                    || snapshot.approvedAppealCount() < 0
-                    || snapshot.rejectedAppealCount() < 0) {
+                    || snapshot.missionRejectedCount() < 0) {
                 throw new IllegalStateException(
-                        "Weekly count aggregate cannot be negative. familyId=" + familyId);
+                        "Weekly mission aggregate cannot be negative. familyId=" + familyId);
             }
         }
     }
 
+    private MonthlyUsageSupplementMetrics normalizePartialUsageMetrics(
+            MonthlyFamilyRecapSourceMetrics sourceMetrics) {
+        return sourceMetrics.partialUsageMetrics() == null
+                ? MonthlyUsageSupplementMetrics.empty()
+                : sourceMetrics.partialUsageMetrics();
+    }
+
+    private MonthlyMissionSummary normalizeMissionSummary(
+            MonthlyFamilyRecapSourceMetrics sourceMetrics) {
+        return sourceMetrics.missionSummary() == null
+                ? MonthlyMissionSummary.empty()
+                : sourceMetrics.missionSummary();
+    }
+
+    private MonthlyAppealSummary normalizeAppealSummary(
+            MonthlyFamilyRecapSourceMetrics sourceMetrics) {
+        return sourceMetrics.appealSummary() == null
+                ? MonthlyAppealSummary.empty()
+                : sourceMetrics.appealSummary();
+    }
+
+    private MonthlyAppealHighlights normalizeAppealHighlights(
+            MonthlyFamilyRecapSourceMetrics sourceMetrics) {
+        return sourceMetrics.appealHighlights() == null
+                ? MonthlyAppealHighlights.empty()
+                : sourceMetrics.appealHighlights();
+    }
+
     private Map<String, BigDecimal> aggregateUsageByWeekday(
-            Long familyId, List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots) {
+            Long familyId,
+            List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots,
+            MonthlyUsageSupplementMetrics partialUsageMetrics,
+            long totalUsedBytes) {
         Map<String, BigDecimal> weekdayUsedBytes = initWeekdayDecimalMap();
 
+        // full week는 weekly 퍼센트를 주간 총사용량으로 역산해 바이트로 되돌림
         for (MonthlyWeeklyRecapSnapshot snapshot : fullWeekSnapshots) {
             Map<String, BigDecimal> weeklyUsageByWeekday =
                     parseUsageByWeekdayJson(
@@ -170,87 +222,53 @@ public class MonthlyFamilyRecapProcessor
                         BigDecimal.valueOf(snapshot.totalUsedBytes())
                                 .multiply(usagePercent)
                                 .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
-
                 weekdayUsedBytes.put(weekday, weekdayUsedBytes.get(weekday).add(weightedBytes));
             }
         }
 
-        long totalUsedBytes =
-                fullWeekSnapshots.stream()
-                        .mapToLong(MonthlyWeeklyRecapSnapshot::totalUsedBytes)
-                        .sum();
+        // partial week는 raw bytes를 그대로 더해 월 기준 바이트 총합을 만듦
+        for (String weekday : WEEKDAY_KEYS) {
+            weekdayUsedBytes.put(
+                    weekday,
+                    weekdayUsedBytes
+                            .get(weekday)
+                            .add(
+                                    BigDecimal.valueOf(
+                                            partialUsageMetrics
+                                                    .usageBytesByWeekday()
+                                                    .getOrDefault(weekday, 0L))));
+        }
 
         // 누적 바이트를 월 totalUsedBytes 대비 퍼센트로 재계산
         Map<String, BigDecimal> monthlyUsageByWeekday = new LinkedHashMap<>();
         for (String weekday : WEEKDAY_KEYS) {
-            BigDecimal weekdayUsed = weekdayUsedBytes.getOrDefault(weekday, BigDecimal.ZERO);
-            monthlyUsageByWeekday.put(weekday, calculatePercent(weekdayUsed, totalUsedBytes));
+            monthlyUsageByWeekday.put(
+                    weekday,
+                    calculatePercent(
+                            weekdayUsedBytes.getOrDefault(weekday, BigDecimal.ZERO),
+                            totalUsedBytes));
         }
-
         return monthlyUsageByWeekday;
     }
 
     private MonthlyPeakUsage aggregatePeakUsage(
             Long familyId,
             List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots,
+            MonthlyUsageSupplementMetrics partialUsageMetrics,
             String mostUsedWeekday) {
-        // peakBytes 우선, 동률이면 더 이른 시간대를 우선 선택
-        WeeklyPeakUsageCandidate selected = new WeeklyPeakUsageCandidate(0, 1, 0L);
+        // partial raw peak를 기본 후보로 두고 full week peak들과 비교해 최종 시간대를 고름
+        MonthlyUsagePeakCandidate selected = partialUsageMetrics.peakUsageCandidate();
 
         for (MonthlyWeeklyRecapSnapshot snapshot : fullWeekSnapshots) {
-            WeeklyPeakUsageCandidate candidate =
+            MonthlyUsagePeakCandidate candidate =
                     parsePeakUsageJson(
                             familyId, snapshot.weekStartDate(), snapshot.peakUsageJson());
-
             if (candidate.isBetterThan(selected)) {
                 selected = candidate;
             }
         }
 
         return new MonthlyPeakUsage(selected.startHour(), selected.endHour(), mostUsedWeekday);
-    }
-
-    private String buildMissionSummaryJson(
-            Long familyId,
-            int totalMissionCount,
-            int completedMissionCount,
-            int rejectedRequestCount) {
-        Map<String, Integer> missionSummary = new LinkedHashMap<>();
-        missionSummary.put("totalMissionCount", totalMissionCount);
-        missionSummary.put("completedMissionCount", completedMissionCount);
-        missionSummary.put("rejectedRequestCount", rejectedRequestCount);
-
-        return toJson(familyId, missionSummary, "missionSummary");
-    }
-
-    private String buildAppealSummaryJson(
-            Long familyId, int totalAppeals, int approvedAppeals, int rejectedAppeals) {
-        Map<String, Integer> appealSummary = new LinkedHashMap<>();
-        appealSummary.put("totalAppeals", totalAppeals);
-        appealSummary.put("approvedAppeals", approvedAppeals);
-        appealSummary.put("rejectedAppeals", rejectedAppeals);
-
-        return toJson(familyId, appealSummary, "appealSummary");
-    }
-
-    private String buildDefaultAppealHighlightsJson(Long familyId) {
-        Map<String, Object> topSuccessfulRequester = new LinkedHashMap<>();
-        topSuccessfulRequester.put("requesterId", null);
-        topSuccessfulRequester.put("requesterName", null);
-        topSuccessfulRequester.put("approvedAppealCount", 0);
-        topSuccessfulRequester.put("recentApprovedAppeals", List.of());
-
-        Map<String, Object> topAcceptedApprover = new LinkedHashMap<>();
-        topAcceptedApprover.put("approverId", null);
-        topAcceptedApprover.put("approverName", null);
-        topAcceptedApprover.put("approvedAppealCount", 0);
-        topAcceptedApprover.put("recentAcceptedAppeals", List.of());
-
-        Map<String, Object> highlights = new LinkedHashMap<>();
-        highlights.put("topSuccessfulRequester", topSuccessfulRequester);
-        highlights.put("topAcceptedApprover", topAcceptedApprover);
-
-        return toJson(familyId, highlights, "appealHighlights");
     }
 
     private Map<String, BigDecimal> parseUsageByWeekdayJson(
@@ -264,8 +282,7 @@ public class MonthlyFamilyRecapProcessor
         try {
             JsonNode root = objectMapper.readTree(usageByWeekdayJson);
             for (String weekday : WEEKDAY_KEYS) {
-                JsonNode valueNode = root.get(weekday);
-                usageByWeekday.put(weekday, parseBigDecimal(valueNode));
+                usageByWeekday.put(weekday, parseBigDecimal(root.get(weekday)));
             }
             return usageByWeekday;
         } catch (JsonProcessingException exception) {
@@ -278,10 +295,10 @@ public class MonthlyFamilyRecapProcessor
         }
     }
 
-    private WeeklyPeakUsageCandidate parsePeakUsageJson(
+    private MonthlyUsagePeakCandidate parsePeakUsageJson(
             Long familyId, LocalDate weekStartDate, String peakUsageJson) {
         if (peakUsageJson == null || peakUsageJson.isBlank()) {
-            return new WeeklyPeakUsageCandidate(0, 1, 0L);
+            return MonthlyUsagePeakCandidate.empty();
         }
 
         try {
@@ -289,7 +306,7 @@ public class MonthlyFamilyRecapProcessor
             int startHour = root.path("startHour").asInt(0);
             int endHour = root.path("endHour").asInt(startHour + 1);
             long peakBytes = root.path("peakBytes").asLong(0L);
-            return new WeeklyPeakUsageCandidate(startHour, endHour, peakBytes);
+            return new MonthlyUsagePeakCandidate(startHour, endHour, peakBytes);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException(
                     "Failed to parse weekly peakUsage JSON. familyId="
@@ -304,6 +321,7 @@ public class MonthlyFamilyRecapProcessor
         String mostUsedWeekday = WEEKDAY_KEYS.get(0);
         BigDecimal mostUsedValue = usageByWeekday.getOrDefault(mostUsedWeekday, BigDecimal.ZERO);
 
+        // tie는 monday -> sunday 순서를 유지하기 위해 strictly greater만 갱신
         for (String weekday : WEEKDAY_KEYS) {
             BigDecimal current = usageByWeekday.getOrDefault(weekday, BigDecimal.ZERO);
             if (current.compareTo(mostUsedValue) > 0) {
@@ -408,24 +426,5 @@ public class MonthlyFamilyRecapProcessor
 
         return BigDecimal.valueOf(numerator)
                 .divide(BigDecimal.valueOf(denominator), 6, RoundingMode.HALF_UP);
-    }
-
-    private record WeeklyPeakUsageCandidate(int startHour, int endHour, long peakBytes) {
-
-        private boolean isBetterThan(WeeklyPeakUsageCandidate current) {
-            if (peakBytes > current.peakBytes) {
-                return true;
-            }
-            if (peakBytes < current.peakBytes) {
-                return false;
-            }
-            if (startHour < current.startHour) {
-                return true;
-            }
-            if (startHour > current.startHour) {
-                return false;
-            }
-            return endHour < current.endHour;
-        }
     }
 }
