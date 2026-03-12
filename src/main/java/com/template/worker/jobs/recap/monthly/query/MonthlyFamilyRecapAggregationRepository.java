@@ -97,7 +97,9 @@ public class MonthlyFamilyRecapAggregationRepository {
                                         ((Number) row.get("mission_created_count")).intValue(),
                                         ((Number) row.get("mission_completed_count")).intValue(),
                                         ((Number) row.get("mission_rejected_count")).intValue(),
-                                        ((Number) row.get("total_appeal_count")).intValue()))
+                                        ((Number) row.get("total_appeal_count")).intValue(),
+                                        ((Number) row.get("approved_appeal_count")).intValue(),
+                                        ((Number) row.get("rejected_appeal_count")).intValue()))
                 .toList();
     }
 

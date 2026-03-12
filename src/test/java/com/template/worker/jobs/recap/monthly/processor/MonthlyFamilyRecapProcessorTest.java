@@ -66,7 +66,9 @@ class MonthlyFamilyRecapProcessorTest {
                                 2,
                                 1,
                                 1,
-                                1),
+                                1,
+                                1,
+                                0),
                         new MonthlyWeeklyRecapSnapshot(
                                 LocalDate.of(2026, 3, 9),
                                 2000L,
@@ -78,7 +80,9 @@ class MonthlyFamilyRecapProcessorTest {
                                 1,
                                 1,
                                 0,
-                                2));
+                                2,
+                                2,
+                                0));
 
         when(aggregationRepository.aggregate(10L, targetMonth))
                 .thenReturn(new MonthlyFamilyRecapSourceMetrics(snapshots, 10000L, 5, 3, 1));
@@ -142,9 +146,29 @@ class MonthlyFamilyRecapProcessorTest {
         List<MonthlyWeeklyRecapSnapshot> snapshots =
                 List.of(
                         new MonthlyWeeklyRecapSnapshot(
-                                LocalDate.of(2026, 3, 2), 1000L, 3000L, "{}", "{}", 0, 0, 0, 0),
+                                LocalDate.of(2026, 3, 2),
+                                1000L,
+                                3000L,
+                                "{}",
+                                "{}",
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0),
                         new MonthlyWeeklyRecapSnapshot(
-                                LocalDate.of(2026, 3, 9), 1000L, 7000L, "{}", "{}", 0, 0, 0, 0));
+                                LocalDate.of(2026, 3, 9),
+                                1000L,
+                                7000L,
+                                "{}",
+                                "{}",
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0));
 
         when(aggregationRepository.aggregate(20L, targetMonth))
                 .thenReturn(new MonthlyFamilyRecapSourceMetrics(snapshots, 9000L, 0, 0, 0));
@@ -172,7 +196,17 @@ class MonthlyFamilyRecapProcessorTest {
         List<MonthlyWeeklyRecapSnapshot> snapshots =
                 List.of(
                         new MonthlyWeeklyRecapSnapshot(
-                                LocalDate.of(2026, 3, 2), 500L, 3000L, "{}", "{}", 3, 1, 0, 0));
+                                LocalDate.of(2026, 3, 2),
+                                500L,
+                                3000L,
+                                "{}",
+                                "{}",
+                                3,
+                                1,
+                                0,
+                                0,
+                                0,
+                                0));
 
         when(aggregationRepository.aggregate(30L, targetMonth))
                 .thenReturn(new MonthlyFamilyRecapSourceMetrics(snapshots, 3000L, 0, 0, 0));
@@ -228,6 +262,8 @@ class MonthlyFamilyRecapProcessorTest {
                                                 1000L,
                                                 "{}",
                                                 "{}",
+                                                0,
+                                                0,
                                                 0,
                                                 0,
                                                 0,
