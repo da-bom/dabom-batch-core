@@ -90,6 +90,7 @@ public class MonthlyFamilyRecapProcessor
                 buildMissionSummaryJson(
                         familyId, totalMissionCount, completedMissionCount, rejectedRequestCount);
 
+        // full week snapshot에서 합산한 이의제기 요약을 월간 JSON으로 변환
         String appealSummaryJson =
                 buildAppealSummaryJson(
                         familyId,
@@ -143,7 +144,9 @@ public class MonthlyFamilyRecapProcessor
             if (snapshot.missionCreatedCount() < 0
                     || snapshot.missionCompletedCount() < 0
                     || snapshot.missionRejectedCount() < 0
-                    || snapshot.appealCount() < 0) {
+                    || snapshot.totalAppealCount() < 0
+                    || snapshot.approvedAppealCount() < 0
+                    || snapshot.rejectedAppealCount() < 0) {
                 throw new IllegalStateException(
                         "Weekly count aggregate cannot be negative. familyId=" + familyId);
             }

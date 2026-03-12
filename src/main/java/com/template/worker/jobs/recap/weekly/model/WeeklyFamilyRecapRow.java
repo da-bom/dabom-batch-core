@@ -15,4 +15,6 @@ public record WeeklyFamilyRecapRow(
         int missionCreatedCount,
         int missionCompletedCount,
         int missionRejectedCount,
-        int appealCount) {}
+        int totalAppealCount,
+        int approvedAppealCount,
+        int rejectedAppealCount) {}

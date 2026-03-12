@@ -30,7 +30,9 @@ public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<WeeklyFamilyRec
               mission_created_count,
               mission_completed_count,
               mission_rejected_count,
-              appeal_count,
+              total_appeal_count,
+              approved_appeal_count,
+              rejected_appeal_count,
               created_at,
               updated_at
             )
@@ -45,7 +47,9 @@ public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<WeeklyFamilyRec
               :missionCreatedCount,
               :missionCompletedCount,
               :missionRejectedCount,
-              :appealCount,
+              :totalAppealCount,
+              :approvedAppealCount,
+              :rejectedAppealCount,
               NOW(),
               NOW()
             )
@@ -58,7 +62,9 @@ public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<WeeklyFamilyRec
               mission_created_count = VALUES(mission_created_count),
               mission_completed_count = VALUES(mission_completed_count),
               mission_rejected_count = VALUES(mission_rejected_count),
-              appeal_count = VALUES(appeal_count),
+              total_appeal_count = VALUES(total_appeal_count),
+              approved_appeal_count = VALUES(approved_appeal_count),
+              rejected_appeal_count = VALUES(rejected_appeal_count),
               updated_at = NOW()
             """;
 
@@ -92,6 +98,8 @@ public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<WeeklyFamilyRec
                 .addValue("missionCreatedCount", row.missionCreatedCount())
                 .addValue("missionCompletedCount", row.missionCompletedCount())
                 .addValue("missionRejectedCount", row.missionRejectedCount())
-                .addValue("appealCount", row.appealCount());
+                .addValue("totalAppealCount", row.totalAppealCount())
+                .addValue("approvedAppealCount", row.approvedAppealCount())
+                .addValue("rejectedAppealCount", row.rejectedAppealCount());
     }
 }

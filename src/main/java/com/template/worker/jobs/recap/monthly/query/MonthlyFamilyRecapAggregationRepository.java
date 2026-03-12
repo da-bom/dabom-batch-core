@@ -3,7 +3,6 @@ package com.template.worker.jobs.recap.monthly.query;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +30,9 @@ public class MonthlyFamilyRecapAggregationRepository {
                    mission_created_count,
                    mission_completed_count,
                    mission_rejected_count,
-                   appeal_count
+                   total_appeal_count,
+                   approved_appeal_count,
+                   rejected_appeal_count
             FROM family_recap_weekly
             WHERE family_id = :familyId
               AND week_start_date >= :monthStartDate
@@ -58,79 +59,32 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND deleted_at IS NULL
             """;
 
-    private static final String READ_TOTAL_NORMAL_APPEALS_SQL =
-            """
-            SELECT COUNT(*)
-            FROM policy_appeal pa
-            JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
-            WHERE pas.family_id = :familyId
-              AND pa.type = 'NORMAL'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
-              AND pas.deleted_at IS NULL
-            """;
-
-    private static final String READ_APPROVED_NORMAL_APPEALS_SQL =
-            """
-            SELECT COUNT(*)
-            FROM policy_appeal pa
-            JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
-            WHERE pas.family_id = :familyId
-              AND pa.type = 'NORMAL'
-              AND pa.status = 'APPROVED'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
-              AND pa.resolved_at < :monthEndExclusive
-              AND pas.deleted_at IS NULL
-            """;
-
-    private static final String READ_REJECTED_NORMAL_APPEALS_SQL =
-            """
-            SELECT COUNT(*)
-            FROM policy_appeal pa
-            JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
-            WHERE pas.family_id = :familyId
-              AND pa.type = 'NORMAL'
-              AND pa.status = 'REJECTED'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
-              AND pa.resolved_at < :monthEndExclusive
-              AND pas.deleted_at IS NULL
-            """;
-
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public MonthlyFamilyRecapSourceMetrics aggregate(Long familyId, LocalDate targetMonth) {
-        // 월간 집계 구간 [monthStart, monthEndExclusive) 계산
-        LocalDateTime monthStart = targetMonth.atStartOfDay();
-        LocalDateTime monthEndExclusive = monthStart.plusMonths(1);
-
         MapSqlParameterSource params =
                 new MapSqlParameterSource()
                         .addValue("familyId", familyId)
-                        .addValue("monthStart", Timestamp.valueOf(monthStart))
-                        .addValue("monthEndExclusive", Timestamp.valueOf(monthEndExclusive))
                         .addValue("monthStartDate", Date.valueOf(targetMonth))
                         .addValue("monthEndExclusiveDate", Date.valueOf(targetMonth.plusMonths(1)));
 
         // 월 내부에 완전히 포함된 full week만 1차 소스로 사용
-        List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots = readFullWeekSnapshots(params);
+        List<Map<String, Object>> rows =
+                jdbcTemplate.queryForList(READ_FULL_WEEKLY_RECAP_ROWS_SQL, params);
+        List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots = readFullWeekSnapshots(rows);
         // quota는 주간 합산하지 않고 월 스냅샷 단일값으로 조회
         long totalQuotaBytes = readQuotaSnapshot(params);
 
-        // 월간 이의제기 요약은 NORMAL 타입만 집계
-        int totalAppeals = readInt(READ_TOTAL_NORMAL_APPEALS_SQL, params);
-        int approvedAppeals = readInt(READ_APPROVED_NORMAL_APPEALS_SQL, params);
-        int rejectedAppeals = readInt(READ_REJECTED_NORMAL_APPEALS_SQL, params);
+        // partial week 보강 없이 full week snapshot의 이의제기 count만 합산
+        int totalAppeals = sumInt(rows, "total_appeal_count");
+        int approvedAppeals = sumInt(rows, "approved_appeal_count");
+        int rejectedAppeals = sumInt(rows, "rejected_appeal_count");
 
         return new MonthlyFamilyRecapSourceMetrics(
                 fullWeekSnapshots, totalQuotaBytes, totalAppeals, approvedAppeals, rejectedAppeals);
     }
 
-    private List<MonthlyWeeklyRecapSnapshot> readFullWeekSnapshots(MapSqlParameterSource params) {
-        List<Map<String, Object>> rows =
-                jdbcTemplate.queryForList(READ_FULL_WEEKLY_RECAP_ROWS_SQL, params);
-
+    private List<MonthlyWeeklyRecapSnapshot> readFullWeekSnapshots(List<Map<String, Object>> rows) {
         return rows.stream()
                 .map(
                         row ->
@@ -143,7 +97,7 @@ public class MonthlyFamilyRecapAggregationRepository {
                                         ((Number) row.get("mission_created_count")).intValue(),
                                         ((Number) row.get("mission_completed_count")).intValue(),
                                         ((Number) row.get("mission_rejected_count")).intValue(),
-                                        ((Number) row.get("appeal_count")).intValue()))
+                                        ((Number) row.get("total_appeal_count")).intValue()))
                 .toList();
     }
 
@@ -159,13 +113,13 @@ public class MonthlyFamilyRecapAggregationRepository {
         return quotaFromFamily == null ? 0L : quotaFromFamily;
     }
 
-    private int readInt(String sql, MapSqlParameterSource params) {
-        try {
-            Integer value = jdbcTemplate.queryForObject(sql, params, Integer.class);
-            return value == null ? 0 : value;
-        } catch (EmptyResultDataAccessException exception) {
-            return 0;
-        }
+    private int sumInt(List<Map<String, Object>> rows, String columnName) {
+        return rows.stream()
+                .map(row -> row.get(columnName))
+                .filter(Number.class::isInstance)
+                .map(Number.class::cast)
+                .mapToInt(Number::intValue)
+                .sum();
     }
 
     private Long readNullableLong(String sql, MapSqlParameterSource params) {
