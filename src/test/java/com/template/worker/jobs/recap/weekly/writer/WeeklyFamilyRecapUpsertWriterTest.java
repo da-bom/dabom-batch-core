@@ -47,7 +47,9 @@ class WeeklyFamilyRecapUpsertWriterTest {
                   mission_created_count INT NOT NULL,
                   mission_completed_count INT NOT NULL,
                   mission_rejected_count INT NOT NULL,
-                  appeal_count INT NOT NULL,
+                  total_appeal_count INT NOT NULL,
+                  approved_appeal_count INT NOT NULL,
+                  rejected_appeal_count INT NOT NULL,
                   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                   UNIQUE KEY uk_family_recap_weekly_family_week (family_id, week_start_date)
@@ -72,7 +74,9 @@ class WeeklyFamilyRecapUpsertWriterTest {
                         1,
                         1,
                         0,
-                        1);
+                        1,
+                        1,
+                        0);
 
         WeeklyFamilyRecapRow secondRow =
                 new WeeklyFamilyRecapRow(
@@ -88,7 +92,9 @@ class WeeklyFamilyRecapUpsertWriterTest {
                         2,
                         2,
                         1,
-                        3);
+                        3,
+                        2,
+                        1);
 
         writer.write(new Chunk<>(List.of(firstRow)));
         writer.write(new Chunk<>(List.of(secondRow)));
@@ -101,14 +107,26 @@ class WeeklyFamilyRecapUpsertWriterTest {
                         "SELECT total_used_bytes FROM family_recap_weekly "
                                 + "WHERE family_id = 10 AND week_start_date = '2026-03-02'",
                         Long.class);
-        Integer appealCount =
+        Integer totalAppealCount =
                 jdbcTemplate.queryForObject(
-                        "SELECT appeal_count FROM family_recap_weekly "
+                        "SELECT total_appeal_count FROM family_recap_weekly "
+                                + "WHERE family_id = 10 AND week_start_date = '2026-03-02'",
+                        Integer.class);
+        Integer approvedAppealCount =
+                jdbcTemplate.queryForObject(
+                        "SELECT approved_appeal_count FROM family_recap_weekly "
+                                + "WHERE family_id = 10 AND week_start_date = '2026-03-02'",
+                        Integer.class);
+        Integer rejectedAppealCount =
+                jdbcTemplate.queryForObject(
+                        "SELECT rejected_appeal_count FROM family_recap_weekly "
                                 + "WHERE family_id = 10 AND week_start_date = '2026-03-02'",
                         Integer.class);
 
         assertThat(rowCount).isEqualTo(1);
         assertThat(totalUsedBytes).isEqualTo(250L);
-        assertThat(appealCount).isEqualTo(3);
+        assertThat(totalAppealCount).isEqualTo(3);
+        assertThat(approvedAppealCount).isEqualTo(2);
+        assertThat(rejectedAppealCount).isEqualTo(1);
     }
 }

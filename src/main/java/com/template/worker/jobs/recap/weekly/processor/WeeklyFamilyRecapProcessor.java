@@ -73,7 +73,9 @@ public class WeeklyFamilyRecapProcessor
                 sourceMetrics.missionCreatedCount(),
                 sourceMetrics.missionCompletedCount(),
                 sourceMetrics.missionRejectedCount(),
-                sourceMetrics.appealCount());
+                sourceMetrics.totalAppealCount(),
+                sourceMetrics.approvedAppealCount(),
+                sourceMetrics.rejectedAppealCount());
     }
 
     private void validateSourceMetrics(
@@ -88,7 +90,9 @@ public class WeeklyFamilyRecapProcessor
         if (sourceMetrics.missionCreatedCount() < 0
                 || sourceMetrics.missionCompletedCount() < 0
                 || sourceMetrics.missionRejectedCount() < 0
-                || sourceMetrics.appealCount() < 0) {
+                || sourceMetrics.totalAppealCount() < 0
+                || sourceMetrics.approvedAppealCount() < 0
+                || sourceMetrics.rejectedAppealCount() < 0) {
             throw new IllegalStateException(
                     "Count aggregate cannot be negative. familyId=" + familyId);
         }

@@ -1,15 +1,12 @@
-package com.template.worker.jobs.recap.weekly.model;
+package com.template.worker.jobs.recap.monthly.model;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
-// family_recap_weekly 업서트 대상 모델
-public record WeeklyFamilyRecapRow(
-        Long familyId,
+// 월간 집계 시 사용하는 주간 리캡 스냅샷
+public record MonthlyWeeklyRecapSnapshot(
         LocalDate weekStartDate,
         long totalUsedBytes,
         long totalQuotaBytes,
-        BigDecimal usageRatePercent,
         String usageByWeekdayJson,
         String peakUsageJson,
         int missionCreatedCount,

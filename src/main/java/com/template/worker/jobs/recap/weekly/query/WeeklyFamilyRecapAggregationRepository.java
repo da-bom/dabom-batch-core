@@ -99,7 +99,7 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND mi.deleted_at IS NULL
             """;
 
-    private static final String READ_APPEAL_COUNT_SQL =
+    private static final String READ_TOTAL_APPEAL_COUNT_SQL =
             """
             SELECT COUNT(*)
             FROM policy_appeal pa
@@ -108,6 +108,34 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND pa.type = 'NORMAL'
               AND pa.created_at >= :weekStart
               AND pa.created_at < :weekEndExclusive
+              AND pas.deleted_at IS NULL
+            """;
+
+    private static final String READ_APPROVED_APPEAL_COUNT_SQL =
+            """
+            SELECT COUNT(*)
+            FROM policy_appeal pa
+            JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
+            WHERE pas.family_id = :familyId
+              AND pa.type = 'NORMAL'
+              AND pa.status = 'APPROVED'
+              AND pa.created_at >= :weekStart
+              AND pa.created_at < :weekEndExclusive
+              AND pa.resolved_at < :weekEndExclusive
+              AND pas.deleted_at IS NULL
+            """;
+
+    private static final String READ_REJECTED_APPEAL_COUNT_SQL =
+            """
+            SELECT COUNT(*)
+            FROM policy_appeal pa
+            JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
+            WHERE pas.family_id = :familyId
+              AND pa.type = 'NORMAL'
+              AND pa.status = 'REJECTED'
+              AND pa.created_at >= :weekStart
+              AND pa.created_at < :weekEndExclusive
+              AND pa.resolved_at < :weekEndExclusive
               AND pas.deleted_at IS NULL
             """;
 
@@ -132,7 +160,9 @@ public class WeeklyFamilyRecapAggregationRepository {
         int missionCreatedCount = readInt(READ_MISSION_CREATED_COUNT_SQL, params);
         int missionCompletedCount = readInt(READ_MISSION_COMPLETED_COUNT_SQL, params);
         int missionRejectedCount = readInt(READ_MISSION_REJECTED_COUNT_SQL, params);
-        int appealCount = readInt(READ_APPEAL_COUNT_SQL, params);
+        int totalAppealCount = readInt(READ_TOTAL_APPEAL_COUNT_SQL, params);
+        int approvedAppealCount = readInt(READ_APPROVED_APPEAL_COUNT_SQL, params);
+        int rejectedAppealCount = readInt(READ_REJECTED_APPEAL_COUNT_SQL, params);
 
         return new WeeklyFamilyRecapSourceMetrics(
                 totalUsedBytes,
@@ -142,7 +172,9 @@ public class WeeklyFamilyRecapAggregationRepository {
                 missionCreatedCount,
                 missionCompletedCount,
                 missionRejectedCount,
-                appealCount);
+                totalAppealCount,
+                approvedAppealCount,
+                rejectedAppealCount);
     }
 
     private long readLong(String sql, MapSqlParameterSource params) {

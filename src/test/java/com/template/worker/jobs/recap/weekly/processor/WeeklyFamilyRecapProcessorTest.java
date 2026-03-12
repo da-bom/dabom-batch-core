@@ -70,7 +70,9 @@ class WeeklyFamilyRecapProcessorTest {
                         3,
                         2,
                         1,
-                        4);
+                        4,
+                        2,
+                        1);
 
         when(aggregationRepository.aggregate(10L, weekStartDate)).thenReturn(sourceMetrics);
 
@@ -92,7 +94,9 @@ class WeeklyFamilyRecapProcessorTest {
         assertThat(row.missionCreatedCount()).isEqualTo(3);
         assertThat(row.missionCompletedCount()).isEqualTo(2);
         assertThat(row.missionRejectedCount()).isEqualTo(1);
-        assertThat(row.appealCount()).isEqualTo(4);
+        assertThat(row.totalAppealCount()).isEqualTo(4);
+        assertThat(row.approvedAppealCount()).isEqualTo(2);
+        assertThat(row.rejectedAppealCount()).isEqualTo(1);
     }
 
     @Test
@@ -116,6 +120,8 @@ class WeeklyFamilyRecapProcessorTest {
                         4000L,
                         Map.of("monday", 1L),
                         new WeeklyPeakUsage(0, 1, 1L),
+                        0,
+                        0,
                         0,
                         0,
                         0,
@@ -151,6 +157,8 @@ class WeeklyFamilyRecapProcessorTest {
                         4000L,
                         Map.of("monday", 1000L),
                         new WeeklyPeakUsage(21, 22, 500L),
+                        0,
+                        0,
                         0,
                         0,
                         0,
