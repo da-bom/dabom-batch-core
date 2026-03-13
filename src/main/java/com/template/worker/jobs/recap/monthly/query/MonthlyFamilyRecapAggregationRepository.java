@@ -33,6 +33,8 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
+    private static final String APPROVED_APPEAL_COUNT = "approved_appeal_count";
+
     private static final String READ_FULL_WEEKLY_RECAP_ROWS_SQL =
             """
             SELECT week_start_date,
@@ -357,7 +359,7 @@ public class MonthlyFamilyRecapAggregationRepository {
                                         toInt(row.get("mission_completed_count")),
                                         toInt(row.get("mission_rejected_count")),
                                         toInt(row.get("total_appeal_count")),
-                                        toInt(row.get("approved_appeal_count")),
+                                        toInt(row.get(APPROVED_APPEAL_COUNT)),
                                         toInt(row.get("rejected_appeal_count"))))
                 .toList();
     }
@@ -584,7 +586,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             return new MonthlyAppealHighlights.TopSuccessfulRequester(
                     requesterId,
                     toNullableString(row.get("requester_name")),
-                    toInt(row.get("approved_appeal_count")),
+                    toInt(row.get(APPROVED_APPEAL_COUNT)),
                     recentApprovedAppeals);
         } catch (EmptyResultDataAccessException exception) {
             return MonthlyAppealHighlights.TopSuccessfulRequester.empty();
@@ -620,7 +622,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             return new MonthlyAppealHighlights.TopAcceptedApprover(
                     approverId,
                     toNullableString(row.get("approver_name")),
-                    toInt(row.get("approved_appeal_count")),
+                    toInt(row.get(APPROVED_APPEAL_COUNT)),
                     recentAcceptedAppeals);
         } catch (EmptyResultDataAccessException exception) {
             return MonthlyAppealHighlights.TopAcceptedApprover.empty();
@@ -735,3 +737,6 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private record DateRange(LocalDateTime startInclusive, LocalDateTime endExclusive) {}
 }
+
+
+
