@@ -10,4 +10,7 @@
     <!-- record DTO는 Spotless 포맷을 따르므로 Indentation 충돌만 제외 -->
     <suppress checks="Indentation"
               files=".*[/\\]core[/\\]event[/\\]dto[/\\].*\.java"/>
+    <!-- 테스트 코드: Spotless 포맷이 120자를 초과할 수 있으므로 LineLength 제외 -->
+    <suppress checks="LineLength"
+              files=".*[/\\]test[/\\].*\.java$"/>
 </suppressions>
