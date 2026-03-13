@@ -132,58 +132,80 @@ public class MonthlyFamilyRecapProcessor
 
         MonthlyUsageSupplementMetrics partialUsageMetrics =
                 normalizePartialUsageMetrics(sourceMetrics);
+        validatePartialUsageMetrics(familyId, partialUsageMetrics);
+
+        MonthlyMissionSummary missionSummary = normalizeMissionSummary(sourceMetrics);
+        validateMissionSummary(familyId, missionSummary);
+
+        MonthlyAppealSummary appealSummary = normalizeAppealSummary(sourceMetrics);
+        validateAppealSummary(familyId, appealSummary);
+
+        MonthlyAppealHighlights appealHighlights = normalizeAppealHighlights(sourceMetrics);
+        validateAppealHighlights(familyId, appealHighlights);
+
+        for (MonthlyWeeklyRecapSnapshot snapshot : sourceMetrics.fullWeekSnapshots()) {
+            validateWeeklySnapshot(familyId, snapshot);
+        }
+    }
+
+    private void validatePartialUsageMetrics(
+            Long familyId, MonthlyUsageSupplementMetrics partialUsageMetrics) {
         if (partialUsageMetrics.totalUsedBytes() < 0
                 || partialUsageMetrics.peakUsageCandidate().peakBytes() < 0) {
             throw new IllegalStateException(
                     "Partial usage aggregate cannot be negative. familyId=" + familyId);
         }
+
         for (Long bytes : partialUsageMetrics.usageBytesByWeekday().values()) {
             if (bytes != null && bytes < 0) {
                 throw new IllegalStateException(
                         "Partial weekday usage cannot be negative. familyId=" + familyId);
             }
         }
+    }
 
-        MonthlyMissionSummary missionSummary = normalizeMissionSummary(sourceMetrics);
+    private void validateMissionSummary(Long familyId, MonthlyMissionSummary missionSummary) {
         if (missionSummary.totalMissionCount() < 0
                 || missionSummary.completedMissionCount() < 0
                 || missionSummary.rejectedRequestCount() < 0) {
             throw new IllegalStateException(
                     "Mission aggregate cannot be negative. familyId=" + familyId);
         }
+    }
 
-        MonthlyAppealSummary appealSummary = normalizeAppealSummary(sourceMetrics);
+    private void validateAppealSummary(Long familyId, MonthlyAppealSummary appealSummary) {
         if (appealSummary.totalAppeals() < 0
                 || appealSummary.approvedAppeals() < 0
                 || appealSummary.rejectedAppeals() < 0) {
             throw new IllegalStateException(
                     "Appeal aggregate cannot be negative. familyId=" + familyId);
         }
+    }
 
-        MonthlyAppealHighlights appealHighlights = normalizeAppealHighlights(sourceMetrics);
+    private void validateAppealHighlights(Long familyId, MonthlyAppealHighlights appealHighlights) {
         if (appealHighlights.topSuccessfulRequester().approvedAppealCount() < 0
                 || appealHighlights.topAcceptedApprover().approvedAppealCount() < 0) {
             throw new IllegalStateException(
                     "Appeal highlight aggregate cannot be negative. familyId=" + familyId);
         }
+    }
 
-        for (MonthlyWeeklyRecapSnapshot snapshot : sourceMetrics.fullWeekSnapshots()) {
-            if (snapshot.totalUsedBytes() < 0 || snapshot.totalQuotaBytes() < 0) {
-                throw new IllegalStateException(
-                        "Weekly usage aggregate cannot be negative. familyId=" + familyId);
-            }
-            if (snapshot.missionCreatedCount() < 0
-                    || snapshot.missionCompletedCount() < 0
-                    || snapshot.missionRejectedCount() < 0) {
-                throw new IllegalStateException(
-                        "Weekly mission aggregate cannot be negative. familyId=" + familyId);
-            }
-            if (snapshot.totalAppealCount() < 0
-                    || snapshot.approvedAppealCount() < 0
-                    || snapshot.rejectedAppealCount() < 0) {
-                throw new IllegalStateException(
-                        "Weekly appeal aggregate cannot be negative. familyId=" + familyId);
-            }
+    private void validateWeeklySnapshot(Long familyId, MonthlyWeeklyRecapSnapshot snapshot) {
+        if (snapshot.totalUsedBytes() < 0 || snapshot.totalQuotaBytes() < 0) {
+            throw new IllegalStateException(
+                    "Weekly usage aggregate cannot be negative. familyId=" + familyId);
+        }
+        if (snapshot.missionCreatedCount() < 0
+                || snapshot.missionCompletedCount() < 0
+                || snapshot.missionRejectedCount() < 0) {
+            throw new IllegalStateException(
+                    "Weekly mission aggregate cannot be negative. familyId=" + familyId);
+        }
+        if (snapshot.totalAppealCount() < 0
+                || snapshot.approvedAppealCount() < 0
+                || snapshot.rejectedAppealCount() < 0) {
+            throw new IllegalStateException(
+                    "Weekly appeal aggregate cannot be negative. familyId=" + familyId);
         }
     }
 
