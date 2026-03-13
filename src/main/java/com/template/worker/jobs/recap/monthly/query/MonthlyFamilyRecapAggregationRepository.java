@@ -737,6 +737,3 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private record DateRange(LocalDateTime startInclusive, LocalDateTime endExclusive) {}
 }
-
-
-
