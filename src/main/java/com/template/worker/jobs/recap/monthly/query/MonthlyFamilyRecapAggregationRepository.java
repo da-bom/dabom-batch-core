@@ -42,7 +42,10 @@ public class MonthlyFamilyRecapAggregationRepository {
                    peak_usage,
                    mission_created_count,
                    mission_completed_count,
-                   mission_rejected_count
+                   mission_rejected_count,
+                   total_appeal_count,
+                   approved_appeal_count,
+                   rejected_appeal_count
             FROM family_recap_weekly
             WHERE family_id = :familyId
               AND week_start_date >= :monthStartDate
@@ -103,54 +106,71 @@ public class MonthlyFamilyRecapAggregationRepository {
             GROUP BY HOUR(event_time)
             """;
 
-    private static final String READ_MISSION_CREATED_COUNT_SQL =
+    private static final String READ_MISSION_CREATED_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
             FROM mission_item
             WHERE family_id = :familyId
-              AND created_at >= :monthStart
-              AND created_at < :monthEndExclusive
+              AND created_at >= :rangeStart
+              AND created_at < :rangeEndExclusive
               AND deleted_at IS NULL
             """;
 
-    private static final String READ_MISSION_COMPLETED_COUNT_SQL =
+    private static final String READ_MISSION_COMPLETED_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
             FROM mission_item
             WHERE family_id = :familyId
               AND status = 'COMPLETED'
-              AND completed_at >= :monthStart
-              AND completed_at < :monthEndExclusive
+              AND completed_at >= :rangeStart
+              AND completed_at < :rangeEndExclusive
               AND deleted_at IS NULL
             """;
 
-    private static final String READ_MISSION_REJECTED_COUNT_SQL =
+    private static final String READ_MISSION_REJECTED_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
             FROM mission_request mr
             JOIN mission_item mi ON mr.mission_item_id = mi.id
             WHERE mi.family_id = :familyId
               AND mr.status = 'REJECTED'
-              AND mr.resolved_at >= :monthStart
-              AND mr.resolved_at < :monthEndExclusive
+              AND mr.resolved_at >= :rangeStart
+              AND mr.resolved_at < :rangeEndExclusive
               AND mr.deleted_at IS NULL
               AND mi.deleted_at IS NULL
             """;
 
-    private static final String READ_TOTAL_APPEAL_COUNT_SQL =
+    private static final String READ_MISSION_CARRY_IN_COUNT_SQL =
+            """
+            SELECT COUNT(*)
+            FROM mission_item mi
+            WHERE mi.family_id = :familyId
+              AND mi.created_at < :monthStart
+              AND mi.deleted_at IS NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM mission_log ml
+                  WHERE ml.mission_item_id = mi.id
+                    AND ml.action_type IN ('MISSION_COMPLETED', 'MISSION_CANCELLED')
+                    AND ml.created_at < :monthStart
+                    AND ml.deleted_at IS NULL
+              )
+            """;
+
+    private static final String READ_TOTAL_APPEAL_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
             FROM policy_appeal pa
             JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
             WHERE pas.family_id = :familyId
               AND pa.type = 'NORMAL'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
+              AND pa.created_at >= :rangeStart
+              AND pa.created_at < :rangeEndExclusive
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             """;
 
-    private static final String READ_APPROVED_APPEAL_COUNT_SQL =
+    private static final String READ_APPROVED_APPEAL_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
             FROM policy_appeal pa
@@ -158,14 +178,13 @@ public class MonthlyFamilyRecapAggregationRepository {
             WHERE pas.family_id = :familyId
               AND pa.type = 'NORMAL'
               AND pa.status = 'APPROVED'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
-              AND pa.resolved_at < :monthEndExclusive
+              AND pa.resolved_at >= :rangeStart
+              AND pa.resolved_at < :rangeEndExclusive
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             """;
 
-    private static final String READ_REJECTED_APPEAL_COUNT_SQL =
+    private static final String READ_REJECTED_APPEAL_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
             FROM policy_appeal pa
@@ -173,9 +192,22 @@ public class MonthlyFamilyRecapAggregationRepository {
             WHERE pas.family_id = :familyId
               AND pa.type = 'NORMAL'
               AND pa.status = 'REJECTED'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
-              AND pa.resolved_at < :monthEndExclusive
+              AND pa.resolved_at >= :rangeStart
+              AND pa.resolved_at < :rangeEndExclusive
+              AND pa.deleted_at IS NULL
+              AND pas.deleted_at IS NULL
+            """;
+
+    private static final String READ_APPEAL_CARRY_IN_COUNT_SQL =
+            """
+            SELECT COUNT(*)
+            FROM policy_appeal pa
+            JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
+            WHERE pas.family_id = :familyId
+              AND pa.type = 'NORMAL'
+              AND pa.created_at < :monthStart
+              AND (pa.resolved_at IS NULL OR pa.resolved_at >= :monthStart)
+              AND (pa.cancelled_at IS NULL OR pa.cancelled_at >= :monthStart)
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             """;
@@ -185,21 +217,20 @@ public class MonthlyFamilyRecapAggregationRepository {
             SELECT pa.requester_id AS requester_id,
                    requester.name AS requester_name,
                    COUNT(*) AS approved_appeal_count,
-                   MAX(pa.created_at) AS latest_requested_at
+                   MAX(pa.resolved_at) AS latest_resolved_at
             FROM policy_appeal pa
             JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
             JOIN customer requester ON pa.requester_id = requester.id
             WHERE pas.family_id = :familyId
               AND pa.type = 'NORMAL'
               AND pa.status = 'APPROVED'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
+              AND pa.resolved_at >= :monthStart
               AND pa.resolved_at < :monthEndExclusive
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
               AND requester.deleted_at IS NULL
             GROUP BY pa.requester_id, requester.name
-            ORDER BY approved_appeal_count DESC, latest_requested_at DESC, requester_id ASC
+            ORDER BY approved_appeal_count DESC, latest_resolved_at DESC, requester_id ASC
             LIMIT 1
             """;
 
@@ -219,12 +250,11 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND pa.requester_id = :requesterId
               AND pa.type = 'NORMAL'
               AND pa.status = 'APPROVED'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
+              AND pa.resolved_at >= :monthStart
               AND pa.resolved_at < :monthEndExclusive
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
-            ORDER BY pa.created_at DESC, pa.id DESC
+            ORDER BY pa.resolved_at DESC, pa.id DESC
             LIMIT 3
             """;
 
@@ -241,8 +271,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND pa.type = 'NORMAL'
               AND pa.status = 'APPROVED'
               AND pa.resolved_by_id IS NOT NULL
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
+              AND pa.resolved_at >= :monthStart
               AND pa.resolved_at < :monthEndExclusive
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
@@ -268,8 +297,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND pa.resolved_by_id = :approverId
               AND pa.type = 'NORMAL'
               AND pa.status = 'APPROVED'
-              AND pa.created_at >= :monthStart
-              AND pa.created_at < :monthEndExclusive
+              AND pa.resolved_at >= :monthStart
               AND pa.resolved_at < :monthEndExclusive
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
@@ -284,27 +312,34 @@ public class MonthlyFamilyRecapAggregationRepository {
         LocalDateTime monthStart = targetMonth.atStartOfDay();
         LocalDateTime monthEndExclusive = monthEndExclusiveDate.atStartOfDay();
 
+        // full week 조회와 carry-in 조회에 함께 쓰는 월 경계값
         MapSqlParameterSource monthlyParams =
                 new MapSqlParameterSource()
                         .addValue("familyId", familyId)
                         .addValue("monthStartDate", Date.valueOf(targetMonth))
                         .addValue("monthEndExclusiveDate", Date.valueOf(monthEndExclusiveDate))
+                        // 월 안에 완전히 들어오는 마지막 주 시작일
                         .addValue(
                                 "lastFullWeekStartDate",
                                 Date.valueOf(monthEndExclusiveDate.minusDays(7)))
+                        // 월과 겹칠 수 있는 최근 weekly snapshot 탐색 시작점
                         .addValue("overlapStartDate", Date.valueOf(targetMonth.minusDays(6)))
                         .addValue("monthStart", Timestamp.valueOf(monthStart))
                         .addValue("monthEndExclusive", Timestamp.valueOf(monthEndExclusive));
 
         List<Map<String, Object>> fullWeekRows =
                 jdbcTemplate.queryForList(READ_FULL_WEEKLY_RECAP_ROWS_SQL, monthlyParams);
+        // 월 내부 full week row만 weekly 합산에 사용
+        List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots = readFullWeekSnapshots(fullWeekRows);
 
         return new MonthlyFamilyRecapSourceMetrics(
-                readFullWeekSnapshots(fullWeekRows),
+                fullWeekSnapshots,
                 readQuotaSnapshot(monthlyParams),
                 readPartialUsageMetrics(familyId, targetMonth),
-                readMissionSummary(monthlyParams),
-                readAppealSummary(monthlyParams),
+                readMissionSummary(familyId, targetMonth, fullWeekSnapshots),
+                readAppealSummary(familyId, targetMonth, fullWeekSnapshots),
+                readMissionCarryInCount(monthlyParams),
+                readAppealCarryInCount(monthlyParams),
                 readAppealHighlights(monthlyParams));
     }
 
@@ -320,7 +355,10 @@ public class MonthlyFamilyRecapAggregationRepository {
                                         toJsonString(row.get("peak_usage")),
                                         toInt(row.get("mission_created_count")),
                                         toInt(row.get("mission_completed_count")),
-                                        toInt(row.get("mission_rejected_count"))))
+                                        toInt(row.get("mission_rejected_count")),
+                                        toInt(row.get("total_appeal_count")),
+                                        toInt(row.get("approved_appeal_count")),
+                                        toInt(row.get("rejected_appeal_count"))))
                 .toList();
     }
 
@@ -349,11 +387,7 @@ public class MonthlyFamilyRecapAggregationRepository {
 
         // 월 경계를 걸치는 좌/우 partial week만 raw 사용량으로 보강
         for (DateRange range : partialRanges) {
-            MapSqlParameterSource rangeParams =
-                    new MapSqlParameterSource()
-                            .addValue("familyId", familyId)
-                            .addValue("rangeStart", Timestamp.valueOf(range.startInclusive()))
-                            .addValue("rangeEndExclusive", Timestamp.valueOf(range.endExclusive()));
+            MapSqlParameterSource rangeParams = buildRangeParams(familyId, range);
 
             totalUsedBytes += readLong(READ_TOTAL_USED_BYTES_IN_RANGE_SQL, rangeParams);
 
@@ -396,14 +430,16 @@ public class MonthlyFamilyRecapAggregationRepository {
         LocalDate rightPartialWeekStart =
                 monthEndExclusiveDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
-        // 월 내부 full week 밖에 남는 좌/우 구간만 partial raw 대상이 됨
+        // 월 바깥으로 걸친 구간만 보강
         List<DateRange> ranges = new ArrayList<>();
         if (monthStartDate.isBefore(firstFullWeekStart)) {
+            // 좌측 partial
             ranges.add(
                     new DateRange(
                             monthStartDate.atStartOfDay(), firstFullWeekStart.atStartOfDay()));
         }
         if (rightPartialWeekStart.isBefore(monthEndExclusiveDate)) {
+            // 우측 partial
             ranges.add(
                     new DateRange(
                             rightPartialWeekStart.atStartOfDay(),
@@ -412,20 +448,102 @@ public class MonthlyFamilyRecapAggregationRepository {
         return ranges;
     }
 
-    private MonthlyMissionSummary readMissionSummary(MapSqlParameterSource params) {
-        // mission summary는 월 경계 정합성을 위해 weekly 합산 대신 raw 월 집계를 사용
+    private MonthlyMissionSummary readMissionSummary(
+            Long familyId,
+            LocalDate targetMonth,
+            List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots) {
+        // 월 경계 partial만 raw로 보강
+        MonthlyMissionSummary partialMissionSummary =
+                readPartialMissionSummary(familyId, targetMonth);
+
+        int totalMissionCount = partialMissionSummary.totalMissionCount();
+        int completedMissionCount = partialMissionSummary.completedMissionCount();
+        int rejectedRequestCount = partialMissionSummary.rejectedRequestCount();
+
+        // 월 내부 full week는 weekly snapshot 재사용
+        for (MonthlyWeeklyRecapSnapshot snapshot : fullWeekSnapshots) {
+            totalMissionCount += snapshot.missionCreatedCount();
+            completedMissionCount += snapshot.missionCompletedCount();
+            rejectedRequestCount += snapshot.missionRejectedCount();
+        }
+
         return new MonthlyMissionSummary(
-                readInt(READ_MISSION_CREATED_COUNT_SQL, params),
-                readInt(READ_MISSION_COMPLETED_COUNT_SQL, params),
-                readInt(READ_MISSION_REJECTED_COUNT_SQL, params));
+                totalMissionCount, completedMissionCount, rejectedRequestCount);
     }
 
-    private MonthlyAppealSummary readAppealSummary(MapSqlParameterSource params) {
-        // appeal summary/highlights/score가 같은 규칙을 보게 하려고 월 raw 집계를 한 번에 맞춤
-        return new MonthlyAppealSummary(
-                readInt(READ_TOTAL_APPEAL_COUNT_SQL, params),
-                readInt(READ_APPROVED_APPEAL_COUNT_SQL, params),
-                readInt(READ_REJECTED_APPEAL_COUNT_SQL, params));
+    private MonthlyAppealSummary readAppealSummary(
+            Long familyId,
+            LocalDate targetMonth,
+            List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots) {
+        // 월 경계 partial만 raw로 보강
+        MonthlyAppealSummary partialAppealSummary = readPartialAppealSummary(familyId, targetMonth);
+
+        int totalAppeals = partialAppealSummary.totalAppeals();
+        int approvedAppeals = partialAppealSummary.approvedAppeals();
+        int rejectedAppeals = partialAppealSummary.rejectedAppeals();
+
+        // 월 내부 full week는 weekly snapshot 재사용
+        for (MonthlyWeeklyRecapSnapshot snapshot : fullWeekSnapshots) {
+            totalAppeals += snapshot.totalAppealCount();
+            approvedAppeals += snapshot.approvedAppealCount();
+            rejectedAppeals += snapshot.rejectedAppealCount();
+        }
+
+        return new MonthlyAppealSummary(totalAppeals, approvedAppeals, rejectedAppeals);
+    }
+
+    private MonthlyMissionSummary readPartialMissionSummary(Long familyId, LocalDate targetMonth) {
+        List<DateRange> partialRanges = resolvePartialRanges(targetMonth);
+        if (partialRanges.isEmpty()) {
+            // full week만으로 월 집계 가능
+            return MonthlyMissionSummary.empty();
+        }
+
+        int totalMissionCount = 0;
+        int completedMissionCount = 0;
+        int rejectedRequestCount = 0;
+
+        for (DateRange range : partialRanges) {
+            MapSqlParameterSource rangeParams = buildRangeParams(familyId, range);
+            totalMissionCount += readInt(READ_MISSION_CREATED_COUNT_IN_RANGE_SQL, rangeParams);
+            completedMissionCount +=
+                    readInt(READ_MISSION_COMPLETED_COUNT_IN_RANGE_SQL, rangeParams);
+            rejectedRequestCount += readInt(READ_MISSION_REJECTED_COUNT_IN_RANGE_SQL, rangeParams);
+        }
+
+        return new MonthlyMissionSummary(
+                totalMissionCount, completedMissionCount, rejectedRequestCount);
+    }
+
+    private MonthlyAppealSummary readPartialAppealSummary(Long familyId, LocalDate targetMonth) {
+        List<DateRange> partialRanges = resolvePartialRanges(targetMonth);
+        if (partialRanges.isEmpty()) {
+            // full week만으로 월 집계 가능
+            return MonthlyAppealSummary.empty();
+        }
+
+        int totalAppeals = 0;
+        int approvedAppeals = 0;
+        int rejectedAppeals = 0;
+
+        for (DateRange range : partialRanges) {
+            MapSqlParameterSource rangeParams = buildRangeParams(familyId, range);
+            totalAppeals += readInt(READ_TOTAL_APPEAL_COUNT_IN_RANGE_SQL, rangeParams);
+            approvedAppeals += readInt(READ_APPROVED_APPEAL_COUNT_IN_RANGE_SQL, rangeParams);
+            rejectedAppeals += readInt(READ_REJECTED_APPEAL_COUNT_IN_RANGE_SQL, rangeParams);
+        }
+
+        return new MonthlyAppealSummary(totalAppeals, approvedAppeals, rejectedAppeals);
+    }
+
+    private int readMissionCarryInCount(MapSqlParameterSource params) {
+        // 월초 시점 미완료 미션 수
+        return readInt(READ_MISSION_CARRY_IN_COUNT_SQL, params);
+    }
+
+    private int readAppealCarryInCount(MapSqlParameterSource params) {
+        // 월초 시점 미해결 NORMAL 이의제기 수
+        return readInt(READ_APPEAL_CARRY_IN_COUNT_SQL, params);
     }
 
     private MonthlyAppealHighlights readAppealHighlights(MapSqlParameterSource params) {
@@ -444,6 +562,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             Long requesterId = toLongObject(row.get("requester_id"));
 
             // 대표 requester를 고른 뒤 최신 승인 이력 3건을 requestedAt 기준으로 붙임
+            // 정렬은 resolvedAt 기준
             MapSqlParameterSource recentParams = copyParams(params);
             recentParams.addValue("requesterId", requesterId);
             List<MonthlyAppealHighlights.RecentApprovedAppeal> recentApprovedAppeals =
@@ -514,6 +633,13 @@ public class MonthlyFamilyRecapAggregationRepository {
             copied.addValue(name, params.getValue(name));
         }
         return copied;
+    }
+
+    private MapSqlParameterSource buildRangeParams(Long familyId, DateRange range) {
+        return new MapSqlParameterSource()
+                .addValue("familyId", familyId)
+                .addValue("rangeStart", Timestamp.valueOf(range.startInclusive()))
+                .addValue("rangeEndExclusive", Timestamp.valueOf(range.endExclusive()));
     }
 
     private Map<String, Long> initWeekdayUsageMap() {

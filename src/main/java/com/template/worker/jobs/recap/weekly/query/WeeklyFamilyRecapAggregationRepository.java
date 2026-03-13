@@ -108,6 +108,7 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND pa.type = 'NORMAL'
               AND pa.created_at >= :weekStart
               AND pa.created_at < :weekEndExclusive
+              AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             """;
 
@@ -119,9 +120,9 @@ public class WeeklyFamilyRecapAggregationRepository {
             WHERE pas.family_id = :familyId
               AND pa.type = 'NORMAL'
               AND pa.status = 'APPROVED'
-              AND pa.created_at >= :weekStart
-              AND pa.created_at < :weekEndExclusive
+              AND pa.resolved_at >= :weekStart
               AND pa.resolved_at < :weekEndExclusive
+              AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             """;
 
@@ -133,16 +134,16 @@ public class WeeklyFamilyRecapAggregationRepository {
             WHERE pas.family_id = :familyId
               AND pa.type = 'NORMAL'
               AND pa.status = 'REJECTED'
-              AND pa.created_at >= :weekStart
-              AND pa.created_at < :weekEndExclusive
+              AND pa.resolved_at >= :weekStart
               AND pa.resolved_at < :weekEndExclusive
+              AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             """;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public WeeklyFamilyRecapSourceMetrics aggregate(Long familyId, LocalDate weekStartDate) {
-        // 주간 집계 구간 [weekStart, weekStart+7days) 계산
+        // 주간 집계 구간 고정
         LocalDateTime weekStart = weekStartDate.atStartOfDay();
         LocalDateTime weekEndExclusive = weekStart.plusDays(7);
 
@@ -196,7 +197,7 @@ public class WeeklyFamilyRecapAggregationRepository {
     }
 
     private Map<String, Long> readUsageByWeekday(MapSqlParameterSource params) {
-        // 7요일 고정 키를 먼저 채워 누락 없이 반환
+        // 7요일 기본값 유지
         Map<String, Long> usageByWeekday = new LinkedHashMap<>();
         usageByWeekday.put("monday", 0L);
         usageByWeekday.put("tuesday", 0L);
@@ -218,7 +219,7 @@ public class WeeklyFamilyRecapAggregationRepository {
     }
 
     private WeeklyPeakUsage readPeakUsage(MapSqlParameterSource params) {
-        // 최대 사용량 시간대를 선택하고 동률이면 더 이른 시간을 우선
+        // 최대 시간대 선택
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(READ_PEAK_USAGE_SQL, params);
         if (rows.isEmpty()) {
             return new WeeklyPeakUsage(0, 1, 0L);
@@ -232,7 +233,7 @@ public class WeeklyFamilyRecapAggregationRepository {
     }
 
     private String resolveWeekdayKey(int dayOfWeek) {
-        // MySQL DAYOFWEEK 숫자를 API 요일 키로 변환
+        // MySQL 요일 변환
         return switch (dayOfWeek) {
             case 1 -> "sunday";
             case 2 -> "monday";

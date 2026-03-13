@@ -11,4 +11,7 @@ public record MonthlyWeeklyRecapSnapshot(
         String peakUsageJson,
         int missionCreatedCount,
         int missionCompletedCount,
-        int missionRejectedCount) {}
+        int missionRejectedCount,
+        int totalAppealCount,
+        int approvedAppealCount,
+        int rejectedAppealCount) {}

@@ -58,7 +58,9 @@ public class MonthlyFamilyRecapProcessor
         // writer 진입 전에 집계값 검증
         validateSourceMetrics(familyId, sourceMetrics);
 
+        // 월 내부 full week snapshot
         List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots = sourceMetrics.fullWeekSnapshots();
+        // 월 경계 partial raw 보강값
         MonthlyUsageSupplementMetrics partialUsageMetrics =
                 normalizePartialUsageMetrics(sourceMetrics);
         MonthlyMissionSummary missionSummary = normalizeMissionSummary(sourceMetrics);
@@ -80,27 +82,29 @@ public class MonthlyFamilyRecapProcessor
                         familyId, fullWeekSnapshots, partialUsageMetrics, totalUsedBytes);
         String usageByWeekdayJson = toJson(familyId, usageByWeekday, "usageByWeekday");
 
+        // weekday tie 결과 사용
         String mostUsedWeekday = resolveMostUsedWeekday(usageByWeekday);
         MonthlyPeakUsage peakUsage =
                 aggregatePeakUsage(
                         familyId, fullWeekSnapshots, partialUsageMetrics, mostUsedWeekday);
         String peakUsageJson = toJson(familyId, peakUsage, "peakUsage");
 
-        // mission/appeal은 repository에서 이미 월 raw 기준으로 정리해 두고, 여기서는 JSON 직렬화만 맡음
+        // summary 직렬화
         String missionSummaryJson = toJson(familyId, missionSummary, "missionSummary");
         String appealSummaryJson = toJson(familyId, appealSummary, "appealSummary");
         String appealHighlightsJson = toJson(familyId, appealHighlights, "appealHighlights");
 
-        // communication score는 raw mission/appeal summary를 그대로 사용해 월 기준 공식을 적용
+        // backlog 포함 score 계산
         BigDecimal communicationScore =
                 calculateCommunicationScore(
                         appealSummary.approvedAppeals(),
                         appealSummary.rejectedAppeals(),
                         appealSummary.totalAppeals(),
                         missionSummary.totalMissionCount(),
-                        missionSummary.completedMissionCount());
+                        missionSummary.completedMissionCount(),
+                        sourceMetrics.appealCarryInCount(),
+                        sourceMetrics.missionCarryInCount());
 
-        // 업서트 모델로 변환
         return new MonthlyFamilyRecapRow(
                 familyId,
                 targetMonth,
@@ -120,6 +124,10 @@ public class MonthlyFamilyRecapProcessor
         if (sourceMetrics.totalQuotaBytes() < 0) {
             throw new IllegalStateException(
                     "Quota snapshot cannot be negative. familyId=" + familyId);
+        }
+        if (sourceMetrics.missionCarryInCount() < 0 || sourceMetrics.appealCarryInCount() < 0) {
+            throw new IllegalStateException(
+                    "Carry-in aggregate cannot be negative. familyId=" + familyId);
         }
 
         MonthlyUsageSupplementMetrics partialUsageMetrics =
@@ -170,11 +178,18 @@ public class MonthlyFamilyRecapProcessor
                 throw new IllegalStateException(
                         "Weekly mission aggregate cannot be negative. familyId=" + familyId);
             }
+            if (snapshot.totalAppealCount() < 0
+                    || snapshot.approvedAppealCount() < 0
+                    || snapshot.rejectedAppealCount() < 0) {
+                throw new IllegalStateException(
+                        "Weekly appeal aggregate cannot be negative. familyId=" + familyId);
+            }
         }
     }
 
     private MonthlyUsageSupplementMetrics normalizePartialUsageMetrics(
             MonthlyFamilyRecapSourceMetrics sourceMetrics) {
+        // partial raw 보강이 없으면 빈 값 사용
         return sourceMetrics.partialUsageMetrics() == null
                 ? MonthlyUsageSupplementMetrics.empty()
                 : sourceMetrics.partialUsageMetrics();
@@ -182,6 +197,7 @@ public class MonthlyFamilyRecapProcessor
 
     private MonthlyMissionSummary normalizeMissionSummary(
             MonthlyFamilyRecapSourceMetrics sourceMetrics) {
+        // summary null 방어
         return sourceMetrics.missionSummary() == null
                 ? MonthlyMissionSummary.empty()
                 : sourceMetrics.missionSummary();
@@ -189,6 +205,7 @@ public class MonthlyFamilyRecapProcessor
 
     private MonthlyAppealSummary normalizeAppealSummary(
             MonthlyFamilyRecapSourceMetrics sourceMetrics) {
+        // summary null 방어
         return sourceMetrics.appealSummary() == null
                 ? MonthlyAppealSummary.empty()
                 : sourceMetrics.appealSummary();
@@ -196,6 +213,7 @@ public class MonthlyFamilyRecapProcessor
 
     private MonthlyAppealHighlights normalizeAppealHighlights(
             MonthlyFamilyRecapSourceMetrics sourceMetrics) {
+        // highlight null 방어
         return sourceMetrics.appealHighlights() == null
                 ? MonthlyAppealHighlights.empty()
                 : sourceMetrics.appealHighlights();
@@ -208,7 +226,7 @@ public class MonthlyFamilyRecapProcessor
             long totalUsedBytes) {
         Map<String, BigDecimal> weekdayUsedBytes = initWeekdayDecimalMap();
 
-        // full week는 weekly 퍼센트를 주간 총사용량으로 역산해 바이트로 되돌림
+        // weekly 비율을 바이트로 환산
         for (MonthlyWeeklyRecapSnapshot snapshot : fullWeekSnapshots) {
             Map<String, BigDecimal> weeklyUsageByWeekday =
                     parseUsageByWeekdayJson(
@@ -239,7 +257,7 @@ public class MonthlyFamilyRecapProcessor
                                                     .getOrDefault(weekday, 0L))));
         }
 
-        // 누적 바이트를 월 totalUsedBytes 대비 퍼센트로 재계산
+        // 월 퍼센트 재계산
         Map<String, BigDecimal> monthlyUsageByWeekday = new LinkedHashMap<>();
         for (String weekday : WEEKDAY_KEYS) {
             monthlyUsageByWeekday.put(
@@ -321,7 +339,7 @@ public class MonthlyFamilyRecapProcessor
         String mostUsedWeekday = WEEKDAY_KEYS.get(0);
         BigDecimal mostUsedValue = usageByWeekday.getOrDefault(mostUsedWeekday, BigDecimal.ZERO);
 
-        // tie는 monday -> sunday 순서를 유지하기 위해 strictly greater만 갱신
+        // tie는 앞선 요일 유지
         for (String weekday : WEEKDAY_KEYS) {
             BigDecimal current = usageByWeekday.getOrDefault(weekday, BigDecimal.ZERO);
             if (current.compareTo(mostUsedValue) > 0) {
@@ -338,35 +356,41 @@ public class MonthlyFamilyRecapProcessor
             int rejectedAppeals,
             int totalAppeals,
             int totalMissionCount,
-            int completedMissionCount) {
-        if (totalAppeals > 0) {
-            // NORMAL 이의제기가 1건 이상이면 가이드 수식(A/B/C)으로 계산
-            int respondedAppeals = approvedAppeals + rejectedAppeals;
+            int completedMissionCount,
+            int appealCarryInCount,
+            int missionCarryInCount) {
+        int respondedAppeals = approvedAppeals + rejectedAppeals;
+        // 월초 backlog 포함 분모
+        int appealBase = appealCarryInCount + totalAppeals;
+        int missionBase = missionCarryInCount + totalMissionCount;
 
-            BigDecimal factorA =
-                    respondedAppeals == 0
-                            ? BigDecimal.ZERO
-                            : divide(approvedAppeals, respondedAppeals);
-            BigDecimal factorB = divide(respondedAppeals, totalAppeals);
-            BigDecimal factorC =
-                    approvedAppeals == 0
-                            ? BigDecimal.ZERO
-                            : divide(completedMissionCount, approvedAppeals).min(BigDecimal.ONE);
+        // 일이 없던 축은 계산 제외
+        BigDecimal appealResponseRate =
+                appealBase > 0 ? divide(respondedAppeals, appealBase) : null;
+        BigDecimal missionCompletionRate =
+                missionBase > 0 ? divide(completedMissionCount, missionBase) : null;
 
-            return factorA.multiply(BigDecimal.valueOf(0.5))
-                    .add(factorB.multiply(BigDecimal.valueOf(0.3)))
-                    .add(factorC.multiply(BigDecimal.valueOf(0.2)))
-                    .multiply(BigDecimal.valueOf(100))
-                    .setScale(2, RoundingMode.HALF_UP);
+        if (appealResponseRate == null && missionCompletionRate == null) {
+            return null;
+        }
+        // 한 축만 있으면 단일 축 점수
+        if (appealResponseRate == null) {
+            return toPercent(missionCompletionRate);
+        }
+        if (missionCompletionRate == null) {
+            return toPercent(appealResponseRate);
         }
 
-        if (totalMissionCount > 0) {
-            // 이의제기 0건이면 미션 완료율 fallback 점수를 사용
-            return calculatePercent(completedMissionCount, totalMissionCount);
-        }
+        // 두 축 모두 있으면 가중 평균
+        return appealResponseRate
+                .multiply(BigDecimal.valueOf(0.55))
+                .add(missionCompletionRate.multiply(BigDecimal.valueOf(0.45)))
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
 
-        // 이의제기/미션 모두 없으면 점수 미산정(null)
-        return null;
+    private BigDecimal toPercent(BigDecimal rate) {
+        return rate.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
     }
 
     private Map<String, BigDecimal> initWeekdayDecimalMap() {

@@ -9,4 +9,6 @@ public record MonthlyFamilyRecapSourceMetrics(
         MonthlyUsageSupplementMetrics partialUsageMetrics,
         MonthlyMissionSummary missionSummary,
         MonthlyAppealSummary appealSummary,
+        int missionCarryInCount,
+        int appealCarryInCount,
         MonthlyAppealHighlights appealHighlights) {}
