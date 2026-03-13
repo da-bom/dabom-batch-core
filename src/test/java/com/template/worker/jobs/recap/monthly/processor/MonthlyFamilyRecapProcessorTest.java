@@ -65,7 +65,10 @@ class MonthlyFamilyRecapProcessorTest {
                                 "{\"startHour\":21,\"endHour\":22,\"peakBytes\":500}",
                                 2,
                                 1,
-                                1),
+                                1,
+                                1,
+                                1,
+                                0),
                         new MonthlyWeeklyRecapSnapshot(
                                 LocalDate.of(2026, 3, 9),
                                 2000L,
@@ -76,7 +79,10 @@ class MonthlyFamilyRecapProcessorTest {
                                 "{\"startHour\":20,\"endHour\":21,\"peakBytes\":800}",
                                 1,
                                 1,
-                                0));
+                                0,
+                                2,
+                                1,
+                                1));
 
         MonthlyUsageSupplementMetrics partialUsageMetrics =
                 new MonthlyUsageSupplementMetrics(
@@ -117,6 +123,8 @@ class MonthlyFamilyRecapProcessorTest {
                                 partialUsageMetrics,
                                 new MonthlyMissionSummary(4, 3, 2),
                                 new MonthlyAppealSummary(5, 3, 1),
+                                0,
+                                0,
                                 appealHighlights));
 
         processor.beforeStep(stepExecution);
@@ -162,7 +170,7 @@ class MonthlyFamilyRecapProcessorTest {
         assertThat(highlights.path("topAcceptedApprover").path("approverId").longValue())
                 .isEqualTo(201L);
 
-        assertThat(row.communicationScore()).isEqualByComparingTo(new BigDecimal("81.50"));
+        assertThat(row.communicationScore()).isEqualByComparingTo(new BigDecimal("77.75"));
     }
 
     @Test
@@ -184,6 +192,9 @@ class MonthlyFamilyRecapProcessorTest {
                                 "{\"startHour\":20,\"endHour\":21,\"peakBytes\":100}",
                                 0,
                                 0,
+                                0,
+                                0,
+                                0,
                                 0));
 
         when(aggregationRepository.aggregate(20L, targetMonth))
@@ -194,6 +205,8 @@ class MonthlyFamilyRecapProcessorTest {
                                 MonthlyUsageSupplementMetrics.empty(),
                                 MonthlyMissionSummary.empty(),
                                 MonthlyAppealSummary.empty(),
+                                0,
+                                0,
                                 MonthlyAppealHighlights.empty()));
 
         processor.beforeStep(stepExecution);
@@ -217,12 +230,38 @@ class MonthlyFamilyRecapProcessorTest {
                                 MonthlyUsageSupplementMetrics.empty(),
                                 new MonthlyMissionSummary(3, 1, 0),
                                 MonthlyAppealSummary.empty(),
+                                0,
+                                0,
                                 MonthlyAppealHighlights.empty()));
 
         processor.beforeStep(stepExecution);
         MonthlyFamilyRecapRow row = processor.process(30L);
 
         assertThat(row.communicationScore()).isEqualByComparingTo(new BigDecimal("33.33"));
+    }
+
+    @Test
+    @DisplayName("process - 신규 요청이 없어도 carry in이 있으면 소통점수를 계산한다")
+    void process_withCarryInOnly_returnsCarryInBasedCommunicationScore() {
+        StepExecution stepExecution = createStepExecution("2026-03-01");
+        LocalDate targetMonth = LocalDate.of(2026, 3, 1);
+        when(parameterSupport.resolveTargetMonth(any(JobParameters.class))).thenReturn(targetMonth);
+        when(aggregationRepository.aggregate(35L, targetMonth))
+                .thenReturn(
+                        new MonthlyFamilyRecapSourceMetrics(
+                                List.of(),
+                                3000L,
+                                MonthlyUsageSupplementMetrics.empty(),
+                                MonthlyMissionSummary.empty(),
+                                new MonthlyAppealSummary(0, 1, 0),
+                                0,
+                                2,
+                                MonthlyAppealHighlights.empty()));
+
+        processor.beforeStep(stepExecution);
+        MonthlyFamilyRecapRow row = processor.process(35L);
+
+        assertThat(row.communicationScore()).isEqualByComparingTo(new BigDecimal("50.00"));
     }
 
     @Test
@@ -239,6 +278,8 @@ class MonthlyFamilyRecapProcessorTest {
                                 MonthlyUsageSupplementMetrics.empty(),
                                 MonthlyMissionSummary.empty(),
                                 MonthlyAppealSummary.empty(),
+                                0,
+                                0,
                                 MonthlyAppealHighlights.empty()));
 
         processor.beforeStep(stepExecution);
@@ -264,6 +305,8 @@ class MonthlyFamilyRecapProcessorTest {
                                         MonthlyUsagePeakCandidate.empty()),
                                 MonthlyMissionSummary.empty(),
                                 MonthlyAppealSummary.empty(),
+                                0,
+                                0,
                                 MonthlyAppealHighlights.empty()));
 
         processor.beforeStep(stepExecution);
