@@ -42,15 +42,7 @@ public class PrecreateCustomerQuotaTasklet implements Tasklet, StepExecutionList
             )
             SELECT fm.customer_id,
                    fm.family_id,
-                   (
-                       SELECT latest.monthly_limit_bytes
-                       FROM customer_quota latest
-                       WHERE latest.customer_id = fm.customer_id
-                         AND latest.family_id = fm.family_id
-                         AND latest.deleted_at IS NULL
-                       ORDER BY latest.current_month DESC, latest.id DESC
-                       LIMIT 1
-                   ) AS monthly_limit_bytes,
+                   latest.monthly_limit_bytes AS monthly_limit_bytes,
                    0 AS monthly_used_bytes,
                    :targetMonth AS current_month,
                    FALSE AS is_blocked,
@@ -59,15 +51,33 @@ public class PrecreateCustomerQuotaTasklet implements Tasklet, StepExecutionList
                    CURRENT_TIMESTAMP AS updated_at,
                    NULL AS deleted_at
             FROM family_member fm
+            LEFT JOIN customer_quota current_row
+              ON current_row.customer_id = fm.customer_id
+             AND current_row.family_id = fm.family_id
+             AND current_row.current_month = :targetMonth
+             AND current_row.deleted_at IS NULL
+            LEFT JOIN (
+                -- 가족/구성원별 최신 customer_quota 1건만 추림
+                SELECT customer_id,
+                       family_id,
+                       monthly_limit_bytes
+                FROM (
+                    SELECT customer_id,
+                           family_id,
+                           monthly_limit_bytes,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY customer_id, family_id
+                               ORDER BY current_month DESC, id DESC
+                           ) AS rn
+                    FROM customer_quota
+                    WHERE deleted_at IS NULL
+                ) ranked_quota
+                WHERE ranked_quota.rn = 1
+            ) latest
+              ON latest.customer_id = fm.customer_id
+             AND latest.family_id = fm.family_id
             WHERE fm.deleted_at IS NULL
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM customer_quota current_row
-                  WHERE current_row.customer_id = fm.customer_id
-                    AND current_row.family_id = fm.family_id
-                    AND current_row.current_month = :targetMonth
-                    AND current_row.deleted_at IS NULL
-              )
+              AND current_row.id IS NULL
             """;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;

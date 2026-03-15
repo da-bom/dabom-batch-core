@@ -39,33 +39,35 @@ public class PrecreateFamilyQuotaTasklet implements Tasklet, StepExecutionListen
             )
             SELECT f.id,
                    :targetMonth AS current_month,
-                   (
-                       SELECT latest.total_quota_bytes
-                       FROM family_quota latest
-                       WHERE latest.family_id = f.id
-                         AND latest.deleted_at IS NULL
-                       ORDER BY latest.current_month DESC, latest.id DESC
-                       LIMIT 1
-                   ) AS total_quota_bytes,
+                   latest.total_quota_bytes AS total_quota_bytes,
                    0 AS used_bytes,
                    CURRENT_TIMESTAMP AS created_at,
                    CURRENT_TIMESTAMP AS updated_at,
                    NULL AS deleted_at
             FROM family f
+            LEFT JOIN family_quota current_row
+              ON current_row.family_id = f.id
+             AND current_row.current_month = :targetMonth
+             AND current_row.deleted_at IS NULL
+            JOIN (
+                -- 가족별 최신 family_quota 1건만 추림
+                SELECT family_id,
+                       total_quota_bytes
+                FROM (
+                    SELECT family_id,
+                           total_quota_bytes,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY family_id
+                               ORDER BY current_month DESC, id DESC
+                           ) AS rn
+                    FROM family_quota
+                    WHERE deleted_at IS NULL
+                ) ranked_quota
+                WHERE ranked_quota.rn = 1
+            ) latest
+              ON latest.family_id = f.id
             WHERE f.deleted_at IS NULL
-              AND EXISTS (
-                  SELECT 1
-                  FROM family_quota snapshot
-                  WHERE snapshot.family_id = f.id
-                    AND snapshot.deleted_at IS NULL
-              )
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM family_quota current_row
-                  WHERE current_row.family_id = f.id
-                    AND current_row.current_month = :targetMonth
-                    AND current_row.deleted_at IS NULL
-              )
+              AND current_row.id IS NULL
             """;
 
     // 최신 family_quota 스냅샷이 없어 선생성을 건너뛸 가족 수를 집계
