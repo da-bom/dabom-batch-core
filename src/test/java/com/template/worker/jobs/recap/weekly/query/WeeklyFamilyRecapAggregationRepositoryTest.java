@@ -35,8 +35,10 @@ class WeeklyFamilyRecapAggregationRepositoryTest {
     @Test
     @DisplayName("aggregate - appeal은 요청 주와 처리 주를 분리해서 집계한다")
     void aggregate_countsAppealRequestedAndResolvedSeparately() {
+        jdbcTemplate.update("INSERT INTO family (id, deleted_at) VALUES (1, NULL)");
         jdbcTemplate.update(
-                "INSERT INTO family (id, total_quota_bytes, deleted_at) VALUES (1, 5000, NULL)");
+                "INSERT INTO family_quota (id, family_id, current_month, total_quota_bytes,"
+                    + " used_bytes, deleted_at) VALUES (1, 1, DATE '2026-03-01', 5000, 0, NULL)");
         jdbcTemplate.update(
                 "INSERT INTO policy_assignment (id, family_id, deleted_at) VALUES (11, 1, NULL)");
 
@@ -118,13 +120,17 @@ class WeeklyFamilyRecapAggregationRepositoryTest {
         jdbcTemplate.execute("DROP TABLE IF EXISTS mission_request");
         jdbcTemplate.execute("DROP TABLE IF EXISTS mission_item");
         jdbcTemplate.execute("DROP TABLE IF EXISTS usage_record");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS family_quota");
         jdbcTemplate.execute("DROP TABLE IF EXISTS family");
     }
 
     private void createTables() {
         jdbcTemplate.execute(
-                "CREATE TABLE family (id BIGINT PRIMARY KEY, total_quota_bytes BIGINT NOT NULL,"
-                        + " deleted_at TIMESTAMP NULL)");
+                "CREATE TABLE family (id BIGINT PRIMARY KEY, deleted_at TIMESTAMP NULL)");
+        jdbcTemplate.execute(
+                "CREATE TABLE family_quota (id BIGINT PRIMARY KEY, family_id BIGINT NOT NULL,"
+                    + " current_month DATE NOT NULL, total_quota_bytes BIGINT NOT NULL, used_bytes"
+                    + " BIGINT NOT NULL, deleted_at TIMESTAMP NULL)");
         jdbcTemplate.execute(
                 "CREATE TABLE usage_record (id BIGINT PRIMARY KEY, family_id BIGINT NOT NULL,"
                         + " event_time TIMESTAMP NOT NULL, bytes_used BIGINT NOT NULL, deleted_at"
