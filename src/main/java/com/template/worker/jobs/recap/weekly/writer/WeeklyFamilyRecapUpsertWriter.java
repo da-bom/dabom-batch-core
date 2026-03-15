@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<WeeklyFamilyRecapRow> {
 
+    // 주간 recap 결과를 family_id와 week_start_date 기준으로 업서트
     private static final String UPSERT_WEEKLY_RECAP_SQL =
             """
             INSERT INTO family_recap_weekly (

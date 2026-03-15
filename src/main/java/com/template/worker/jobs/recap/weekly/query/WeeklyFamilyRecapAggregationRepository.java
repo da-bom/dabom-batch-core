@@ -1,5 +1,6 @@
 package com.template.worker.jobs.recap.weekly.query;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WeeklyFamilyRecapAggregationRepository {
 
+    // 대상 주간의 총 사용량을 합산
     private static final String READ_TOTAL_USED_BYTES_SQL =
             """
             SELECT COALESCE(SUM(bytes_used), 0)
@@ -31,6 +33,7 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND deleted_at IS NULL
             """;
 
+    // 대상 주간의 요일별 사용량을 집계
     private static final String READ_USAGE_BY_WEEKDAY_SQL =
             """
             SELECT DAYOFWEEK(event_time) AS day_of_week,
@@ -43,6 +46,7 @@ public class WeeklyFamilyRecapAggregationRepository {
             GROUP BY DAYOFWEEK(event_time)
             """;
 
+    // 대상 주간에서 사용량이 가장 큰 시간대를 조회
     private static final String READ_PEAK_USAGE_SQL =
             """
             SELECT HOUR(event_time) AS start_hour,
@@ -57,14 +61,17 @@ public class WeeklyFamilyRecapAggregationRepository {
             LIMIT 1
             """;
 
+    // 대상 주가 속한 월의 family_quota 총량을 조회
     private static final String READ_TOTAL_QUOTA_BYTES_SQL =
             """
             SELECT total_quota_bytes
-            FROM family
-            WHERE id = :familyId
+            FROM family_quota
+            WHERE family_id = :familyId
+              AND current_month = :quotaMonth
               AND deleted_at IS NULL
             """;
 
+    // 대상 주간에 생성된 미션 수를 집계
     private static final String READ_MISSION_CREATED_COUNT_SQL =
             """
             SELECT COUNT(*)
@@ -75,6 +82,7 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND deleted_at IS NULL
             """;
 
+    // 대상 주간에 완료된 미션 수를 집계
     private static final String READ_MISSION_COMPLETED_COUNT_SQL =
             """
             SELECT COUNT(*)
@@ -86,6 +94,7 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND deleted_at IS NULL
             """;
 
+    // 대상 주간에 반려된 미션 요청 수를 집계
     private static final String READ_MISSION_REJECTED_COUNT_SQL =
             """
             SELECT COUNT(*)
@@ -99,6 +108,7 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND mi.deleted_at IS NULL
             """;
 
+    // 대상 주간에 생성된 NORMAL 이의제기 수를 집계
     private static final String READ_TOTAL_APPEAL_COUNT_SQL =
             """
             SELECT COUNT(*)
@@ -112,6 +122,7 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND pas.deleted_at IS NULL
             """;
 
+    // 대상 주간에 승인된 NORMAL 이의제기 수를 집계
     private static final String READ_APPROVED_APPEAL_COUNT_SQL =
             """
             SELECT COUNT(*)
@@ -126,6 +137,7 @@ public class WeeklyFamilyRecapAggregationRepository {
               AND pas.deleted_at IS NULL
             """;
 
+    // 대상 주간에 반려된 NORMAL 이의제기 수를 집계
     private static final String READ_REJECTED_APPEAL_COUNT_SQL =
             """
             SELECT COUNT(*)
@@ -150,6 +162,7 @@ public class WeeklyFamilyRecapAggregationRepository {
         MapSqlParameterSource params =
                 new MapSqlParameterSource()
                         .addValue("familyId", familyId)
+                        .addValue("quotaMonth", Date.valueOf(weekStartDate.withDayOfMonth(1)))
                         .addValue("weekStart", Timestamp.valueOf(weekStart))
                         .addValue("weekEndExclusive", Timestamp.valueOf(weekEndExclusive));
 
@@ -197,7 +210,7 @@ public class WeeklyFamilyRecapAggregationRepository {
     }
 
     private Map<String, Long> readUsageByWeekday(MapSqlParameterSource params) {
-        // 7요일 기본값 유지
+        // 요일별 기본값을 0으로 채움
         Map<String, Long> usageByWeekday = new LinkedHashMap<>();
         usageByWeekday.put("monday", 0L);
         usageByWeekday.put("tuesday", 0L);
@@ -219,7 +232,7 @@ public class WeeklyFamilyRecapAggregationRepository {
     }
 
     private WeeklyPeakUsage readPeakUsage(MapSqlParameterSource params) {
-        // 최대 시간대 선택
+        // 사용량이 가장 큰 시간대 1건만 선택
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(READ_PEAK_USAGE_SQL, params);
         if (rows.isEmpty()) {
             return new WeeklyPeakUsage(0, 1, 0L);
@@ -233,7 +246,7 @@ public class WeeklyFamilyRecapAggregationRepository {
     }
 
     private String resolveWeekdayKey(int dayOfWeek) {
-        // MySQL 요일 변환
+        // MySQL 요일 값을 응답용 키로 변환
         return switch (dayOfWeek) {
             case 1 -> "sunday";
             case 2 -> "monday";

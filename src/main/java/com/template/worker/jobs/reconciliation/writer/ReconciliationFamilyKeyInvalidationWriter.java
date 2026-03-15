@@ -1,5 +1,6 @@
 package com.template.worker.jobs.reconciliation.writer;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.batch.core.ExitStatus;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import com.template.worker.global.util.RedisKeyGenerator;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
+import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobParameterSupport;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,13 +26,16 @@ public class ReconciliationFamilyKeyInvalidationWriter
 
     private final StringRedisTemplate redisTemplate;
     private final RedisKeyGenerator keyGenerator;
+    private final DbRedisReconciliationJobParameterSupport parameterSupport;
 
+    private LocalDate targetMonth;
     private long deletedFamilyInfoCount;
     private long deletedFamilyRemainingCount;
 
     @Override
     public void beforeStep(StepExecution stepExecution) {
-        // Step 단위 집계를 위해 삭제 카운터를 초기화함
+        // Step 단위 집계를 위해 대상 월과 삭제 카운터를 초기화
+        targetMonth = parameterSupport.resolveTargetMonth(stepExecution.getJobParameters());
         deletedFamilyInfoCount = 0L;
         deletedFamilyRemainingCount = 0L;
     }
@@ -41,7 +46,7 @@ public class ReconciliationFamilyKeyInvalidationWriter
             return;
         }
 
-        // Redis 라운드트립을 줄이기 위해 파이프라인으로 일괄 삭제함
+        // Redis 라운드트립을 줄이기 위해 대상 월 info와 remaining 키만 파이프라인으로 삭제
         List<Object> results =
                 redisTemplate.executePipelined(
                         (RedisCallback<Object>)
@@ -49,9 +54,11 @@ public class ReconciliationFamilyKeyInvalidationWriter
                                     StringRedisConnection redisConnection =
                                             (StringRedisConnection) connection;
                                     for (Long familyId : chunk) {
-                                        redisConnection.del(keyGenerator.familyInfoKey(familyId));
                                         redisConnection.del(
-                                                keyGenerator.familyRemainingKey(familyId));
+                                                keyGenerator.familyInfoKey(familyId, targetMonth));
+                                        redisConnection.del(
+                                                keyGenerator.familyRemainingKey(
+                                                        familyId, targetMonth));
                                     }
                                     return null;
                                 });
