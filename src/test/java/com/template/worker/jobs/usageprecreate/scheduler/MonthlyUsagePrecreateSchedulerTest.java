@@ -2,7 +2,6 @@ package com.template.worker.jobs.usageprecreate.scheduler;
 
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -43,11 +42,8 @@ class MonthlyUsagePrecreateSchedulerTest {
 
         verify(launcher)
                 .run(
-                        eq(MonthlyUsagePrecreateJobConstants.JOB_NAME),
-                        eq(
-                                Map.of(
-                                        MonthlyUsagePrecreateJobConstants.PARAM_TARGET_MONTH,
-                                        "2026-04-01")));
+                        MonthlyUsagePrecreateJobConstants.JOB_NAME,
+                        Map.of(MonthlyUsagePrecreateJobConstants.PARAM_TARGET_MONTH, "2026-04-01"));
     }
 
     @Test
