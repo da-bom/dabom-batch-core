@@ -14,12 +14,16 @@ batch:
     monthly-family-recap:
       enabled: ${BATCH_MONTHLY_FAMILY_RECAP_ENABLED:false}
       cron: ${BATCH_MONTHLY_FAMILY_RECAP_CRON:0 20 0 1 * *}
+    monthly-usage-precreate:
+      enabled: ${BATCH_MONTHLY_USAGE_PRECREATE_ENABLED:false}
+      cron: ${BATCH_MONTHLY_USAGE_PRECREATE_CRON:0 30 23 28-31 * *}
     monthly-usage-reset:
       enabled: ${BATCH_MONTHLY_USAGE_RESET_ENABLED:false}
       cron: ${BATCH_MONTHLY_USAGE_RESET_CRON:0 1 0 1 * *}
     db-redis-reconciliation:
       enabled: ${BATCH_DB_REDIS_RECONCILIATION_ENABLED:false}
       cron: ${BATCH_DB_REDIS_RECONCILIATION_CRON:0 0 3 * * *}
+
   jobs:
     weekly-family-recap:
       lock-ttl: ${BATCH_WEEKLY_FAMILY_RECAP_LOCK_TTL:PT1H}
@@ -29,6 +33,9 @@ batch:
       lock-ttl: ${BATCH_MONTHLY_FAMILY_RECAP_LOCK_TTL:PT1H}
       chunk-size: ${BATCH_MONTHLY_FAMILY_RECAP_CHUNK_SIZE:1000}
       db-fetch-size: ${BATCH_MONTHLY_FAMILY_RECAP_DB_FETCH_SIZE:1000}
+    monthly-usage-precreate:
+      lock-ttl: ${BATCH_MONTHLY_USAGE_PRECREATE_LOCK_TTL:PT1H}
+      db-fetch-size: ${BATCH_MONTHLY_USAGE_PRECREATE_DB_FETCH_SIZE:4000}
     monthly-usage-reset:
       lock-ttl: ${BATCH_MONTHLY_USAGE_RESET_LOCK_TTL:PT1H}
       redis-chunk-size: ${BATCH_MONTHLY_USAGE_RESET_REDIS_CHUNK_SIZE:2000}
