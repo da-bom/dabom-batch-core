@@ -10,7 +10,6 @@ import com.template.worker.global.listener.JobResultListener;
 import com.template.worker.jobs.usagereset.listener.MonthlyUsageResetJobListener;
 import com.template.worker.jobs.usagereset.step.AcquireMonthlyResetLockStepConfig;
 import com.template.worker.jobs.usagereset.step.ReleaseMonthlyResetLockStepConfig;
-import com.template.worker.jobs.usagereset.step.ResetFamilyMonthStepConfig;
 import com.template.worker.jobs.usagereset.step.ResetRedisCustomerMonthlyUsageStepConfig;
 import com.template.worker.jobs.usagereset.step.ResetRedisFamilyKeysStepConfig;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
@@ -24,7 +23,6 @@ public class MonthlyUsageResetJobConfig {
     private final JobResultListener jobResultListener;
     private final MonthlyUsageResetJobListener monthlyUsageResetJobListener;
     private final AcquireMonthlyResetLockStepConfig acquireMonthlyResetLockStepConfig;
-    private final ResetFamilyMonthStepConfig resetFamilyMonthStepConfig;
     private final ResetRedisFamilyKeysStepConfig resetRedisFamilyKeysStepConfig;
     private final ResetRedisCustomerMonthlyUsageStepConfig resetRedisCustomerMonthlyUsageStepConfig;
     private final ReleaseMonthlyResetLockStepConfig releaseMonthlyResetLockStepConfig;
@@ -42,10 +40,9 @@ public class MonthlyUsageResetJobConfig {
                 .on("FAILED")
                 .fail()
                 .from(acquireMonthlyResetLockStepConfig.acquireMonthlyResetLockStep())
-                // 락 획득 이후에만 DB와 Redis 초기화 스텝 체인을 수행함
+                // 락 획득 이후에만 전월 Redis 정리 스텝 체인을 수행
                 .on("*")
-                .to(resetFamilyMonthStepConfig.resetFamilyMonthStep())
-                .next(resetRedisFamilyKeysStepConfig.resetRedisFamilyKeysStep())
+                .to(resetRedisFamilyKeysStepConfig.resetRedisFamilyKeysStep())
                 .next(resetRedisCustomerMonthlyUsageStepConfig.resetRedisCustomerMonthlyUsageStep())
                 .next(releaseMonthlyResetLockStepConfig.releaseMonthlyResetLockStep())
                 .end()
