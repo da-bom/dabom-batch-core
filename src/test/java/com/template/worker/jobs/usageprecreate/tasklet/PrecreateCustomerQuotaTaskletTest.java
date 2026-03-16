@@ -1,7 +1,12 @@
 package com.template.worker.jobs.usageprecreate.tasklet;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -22,10 +27,13 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import com.template.worker.global.retry.BatchRetrySupport;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobConstants;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobParameterSupport;
 
@@ -43,7 +51,9 @@ class PrecreateCustomerQuotaTaskletTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
         tasklet =
                 new PrecreateCustomerQuotaTasklet(
-                        new NamedParameterJdbcTemplate(dataSource), parameterSupport);
+                        new NamedParameterJdbcTemplate(dataSource),
+                        parameterSupport,
+                        new BatchRetrySupport(3, 0L));
 
         dropTables();
         createTables();
@@ -185,6 +195,56 @@ class PrecreateCustomerQuotaTaskletTest {
                                     + " AND family_id = 10 AND current_month = DATE '2026-04-01'",
                                 String.class))
                 .isNull();
+    }
+
+    @Test
+    @DisplayName("execute - QueryTimeoutException 이 두 번 나도 세 번째에 성공한다")
+    void execute_retriesQueryTimeoutExceptionThenSucceeds() throws Exception {
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate =
+                mock(NamedParameterJdbcTemplate.class);
+        PrecreateCustomerQuotaTasklet retryTasklet =
+                new PrecreateCustomerQuotaTasklet(
+                        namedParameterJdbcTemplate, parameterSupport, new BatchRetrySupport(3, 0L));
+        StepExecution stepExecution = createStepExecution(LocalDate.of(2026, 4, 1));
+
+        when(namedParameterJdbcTemplate.update(anyString(), any(MapSqlParameterSource.class)))
+                .thenThrow(new QueryTimeoutException("timeout"))
+                .thenThrow(new QueryTimeoutException("timeout"))
+                .thenReturn(1);
+
+        retryTasklet.beforeStep(stepExecution);
+        retryTasklet.execute(
+                new StepContribution(stepExecution),
+                new ChunkContext(new StepContext(stepExecution)));
+
+        verify(namedParameterJdbcTemplate, times(3))
+                .update(anyString(), any(MapSqlParameterSource.class));
+    }
+
+    @Test
+    @DisplayName("execute - QueryTimeoutException 이 재시도 한도를 넘으면 예외를 전파한다")
+    void execute_throwsWhenQueryTimeoutExceedsRetryLimit() {
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate =
+                mock(NamedParameterJdbcTemplate.class);
+        PrecreateCustomerQuotaTasklet retryTasklet =
+                new PrecreateCustomerQuotaTasklet(
+                        namedParameterJdbcTemplate, parameterSupport, new BatchRetrySupport(3, 0L));
+        StepExecution stepExecution = createStepExecution(LocalDate.of(2026, 4, 1));
+
+        when(namedParameterJdbcTemplate.update(anyString(), any(MapSqlParameterSource.class)))
+                .thenThrow(new QueryTimeoutException("timeout"));
+
+        retryTasklet.beforeStep(stepExecution);
+
+        assertThatThrownBy(
+                        () ->
+                                retryTasklet.execute(
+                                        new StepContribution(stepExecution),
+                                        new ChunkContext(new StepContext(stepExecution))))
+                .isInstanceOf(QueryTimeoutException.class);
+
+        verify(namedParameterJdbcTemplate, times(3))
+                .update(anyString(), any(MapSqlParameterSource.class));
     }
 
     private StepExecution createStepExecution(LocalDate targetMonth) {
