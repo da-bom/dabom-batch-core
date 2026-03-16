@@ -35,6 +35,7 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private static final String APPROVED_APPEAL_COUNT = "approved_appeal_count";
 
+    // 월 내부 full week에 해당하는 weekly recap 스냅샷을 조회
     private static final String READ_FULL_WEEKLY_RECAP_ROWS_SQL =
             """
             SELECT week_start_date,
@@ -55,6 +56,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             ORDER BY week_start_date ASC
             """;
 
+    // 월과 겹치는 가장 최근 weekly recap의 quota 스냅샷을 조회
     private static final String READ_LATEST_QUOTA_SNAPSHOT_FROM_WEEKLY_SQL =
             """
             SELECT total_quota_bytes
@@ -66,14 +68,17 @@ public class MonthlyFamilyRecapAggregationRepository {
             LIMIT 1
             """;
 
+    // 주간 quota 스냅샷이 없을 때 `targetMonth` family_quota를 fallback으로 조회
     private static final String READ_FAMILY_QUOTA_BYTES_SQL =
             """
             SELECT total_quota_bytes
-            FROM family
-            WHERE id = :familyId
+            FROM family_quota
+            WHERE family_id = :familyId
+              AND current_month = :monthStartDate
               AND deleted_at IS NULL
             """;
 
+    // 부분 주간 구간의 총 사용량을 집계
     private static final String READ_TOTAL_USED_BYTES_IN_RANGE_SQL =
             """
             SELECT COALESCE(SUM(bytes_used), 0)
@@ -84,6 +89,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND deleted_at IS NULL
             """;
 
+    // 부분 주간 구간의 요일별 사용량을 집계
     private static final String READ_USAGE_BY_WEEKDAY_IN_RANGE_SQL =
             """
             SELECT DAYOFWEEK(event_time) AS day_of_week,
@@ -96,6 +102,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             GROUP BY DAYOFWEEK(event_time)
             """;
 
+    // 부분 주간 구간의 시간대별 사용량을 집계
     private static final String READ_USAGE_BY_HOUR_IN_RANGE_SQL =
             """
             SELECT HOUR(event_time) AS start_hour,
@@ -108,6 +115,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             GROUP BY HOUR(event_time)
             """;
 
+    // 부분 주간 구간에 생성된 미션 수를 집계
     private static final String READ_MISSION_CREATED_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
@@ -118,6 +126,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND deleted_at IS NULL
             """;
 
+    // 부분 주간 구간에 완료된 미션 수를 집계
     private static final String READ_MISSION_COMPLETED_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
@@ -129,6 +138,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND deleted_at IS NULL
             """;
 
+    // 부분 주간 구간에 반려된 미션 요청 수를 집계
     private static final String READ_MISSION_REJECTED_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
@@ -142,6 +152,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND mi.deleted_at IS NULL
             """;
 
+    // 월 시작 시점까지 미완료로 남아 있는 미션 수를 집계
     private static final String READ_MISSION_CARRY_IN_COUNT_SQL =
             """
             SELECT COUNT(*)
@@ -159,6 +170,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               )
             """;
 
+    // 부분 주간 구간에 생성된 NORMAL 이의제기 수를 집계
     private static final String READ_TOTAL_APPEAL_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
@@ -172,6 +184,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND pas.deleted_at IS NULL
             """;
 
+    // 부분 주간 구간에 승인된 NORMAL 이의제기 수를 집계
     private static final String READ_APPROVED_APPEAL_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
@@ -186,6 +199,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND pas.deleted_at IS NULL
             """;
 
+    // 부분 주간 구간에 반려된 NORMAL 이의제기 수를 집계
     private static final String READ_REJECTED_APPEAL_COUNT_IN_RANGE_SQL =
             """
             SELECT COUNT(*)
@@ -200,6 +214,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND pas.deleted_at IS NULL
             """;
 
+    // 월 시작 시점에 미해결 상태로 이어진 NORMAL 이의제기 수를 집계
     private static final String READ_APPEAL_CARRY_IN_COUNT_SQL =
             """
             SELECT COUNT(*)
@@ -214,6 +229,7 @@ public class MonthlyFamilyRecapAggregationRepository {
               AND pas.deleted_at IS NULL
             """;
 
+    // 월간 승인 이의제기를 가장 많이 만든 requester를 조회
     private static final String READ_TOP_SUCCESSFUL_REQUESTER_SQL =
             """
             SELECT pa.requester_id AS requester_id,
@@ -236,6 +252,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             LIMIT 1
             """;
 
+    // 대표 requester의 최근 승인 이의제기 3건을 조회
     private static final String READ_RECENT_APPROVED_APPEALS_SQL =
             """
             SELECT pa.id AS appeal_id,
@@ -260,6 +277,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             LIMIT 3
             """;
 
+    // 월간 승인 이의제기를 가장 많이 수락한 approver를 조회
     private static final String READ_TOP_ACCEPTED_APPROVER_SQL =
             """
             SELECT pa.resolved_by_id AS approver_id,
@@ -283,6 +301,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             LIMIT 1
             """;
 
+    // 대표 approver가 최근 수락한 이의제기 3건을 조회
     private static final String READ_RECENT_ACCEPTED_APPEALS_SQL =
             """
             SELECT pa.id AS appeal_id,
@@ -365,13 +384,13 @@ public class MonthlyFamilyRecapAggregationRepository {
     }
 
     private long readQuotaSnapshot(MapSqlParameterSource params) {
-        // quota는 합산하지 않고 월과 겹치는 가장 최근 weekly snapshot 1건만 사용
+        // quota는 합산하지 않고 월과 겹치는 가장 최근 주간 스냅샷 1건만 사용함
         Long quotaFromWeekly = readNullableLong(READ_LATEST_QUOTA_SNAPSHOT_FROM_WEEKLY_SQL, params);
         if (quotaFromWeekly != null) {
             return quotaFromWeekly;
         }
 
-        // 주간 스냅샷이 없으면 family 현재 quota로 fallback
+        // 주간 스냅샷이 없으면 targetMonth family_quota로 fallback함
         Long quotaFromFamily = readNullableLong(READ_FAMILY_QUOTA_BYTES_SQL, params);
         return quotaFromFamily == null ? 0L : quotaFromFamily;
     }
@@ -432,16 +451,16 @@ public class MonthlyFamilyRecapAggregationRepository {
         LocalDate rightPartialWeekStart =
                 monthEndExclusiveDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
-        // 월 바깥으로 걸친 구간만 보강
+        // 월 바깥으로 걸친 구간만 보강 대상으로 잡음
         List<DateRange> ranges = new ArrayList<>();
         if (monthStartDate.isBefore(firstFullWeekStart)) {
-            // 좌측 partial
+            // 좌측 partial 구간을 추가함
             ranges.add(
                     new DateRange(
                             monthStartDate.atStartOfDay(), firstFullWeekStart.atStartOfDay()));
         }
         if (rightPartialWeekStart.isBefore(monthEndExclusiveDate)) {
-            // 우측 partial
+            // 우측 partial 구간을 추가함
             ranges.add(
                     new DateRange(
                             rightPartialWeekStart.atStartOfDay(),
@@ -454,7 +473,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             Long familyId,
             LocalDate targetMonth,
             List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots) {
-        // 월 경계 partial만 raw로 보강
+        // 월 경계 partial만 raw 집계로 보강함
         MonthlyMissionSummary partialMissionSummary =
                 readPartialMissionSummary(familyId, targetMonth);
 
@@ -462,7 +481,7 @@ public class MonthlyFamilyRecapAggregationRepository {
         int completedMissionCount = partialMissionSummary.completedMissionCount();
         int rejectedRequestCount = partialMissionSummary.rejectedRequestCount();
 
-        // 월 내부 full week는 weekly snapshot 재사용
+        // 월 내부 전체 주간은 주간 스냅샷을 재사용함
         for (MonthlyWeeklyRecapSnapshot snapshot : fullWeekSnapshots) {
             totalMissionCount += snapshot.missionCreatedCount();
             completedMissionCount += snapshot.missionCompletedCount();
@@ -477,14 +496,14 @@ public class MonthlyFamilyRecapAggregationRepository {
             Long familyId,
             LocalDate targetMonth,
             List<MonthlyWeeklyRecapSnapshot> fullWeekSnapshots) {
-        // 월 경계 partial만 raw로 보강
+        // 월 경계 partial만 raw 집계로 보강함
         MonthlyAppealSummary partialAppealSummary = readPartialAppealSummary(familyId, targetMonth);
 
         int totalAppeals = partialAppealSummary.totalAppeals();
         int approvedAppeals = partialAppealSummary.approvedAppeals();
         int rejectedAppeals = partialAppealSummary.rejectedAppeals();
 
-        // 월 내부 full week는 weekly snapshot 재사용
+        // 월 내부 전체 주간은 주간 스냅샷을 재사용함
         for (MonthlyWeeklyRecapSnapshot snapshot : fullWeekSnapshots) {
             totalAppeals += snapshot.totalAppealCount();
             approvedAppeals += snapshot.approvedAppealCount();
@@ -497,7 +516,7 @@ public class MonthlyFamilyRecapAggregationRepository {
     private MonthlyMissionSummary readPartialMissionSummary(Long familyId, LocalDate targetMonth) {
         List<DateRange> partialRanges = resolvePartialRanges(targetMonth);
         if (partialRanges.isEmpty()) {
-            // full week만으로 월 집계 가능
+            // 전체 주간만으로 월 집계가 가능하면 빈 부분 결과를 반환함
             return MonthlyMissionSummary.empty();
         }
 
@@ -520,7 +539,7 @@ public class MonthlyFamilyRecapAggregationRepository {
     private MonthlyAppealSummary readPartialAppealSummary(Long familyId, LocalDate targetMonth) {
         List<DateRange> partialRanges = resolvePartialRanges(targetMonth);
         if (partialRanges.isEmpty()) {
-            // full week만으로 월 집계 가능
+            // 전체 주간만으로 월 집계가 가능하면 빈 부분 결과를 반환함
             return MonthlyAppealSummary.empty();
         }
 
@@ -539,12 +558,12 @@ public class MonthlyFamilyRecapAggregationRepository {
     }
 
     private int readMissionCarryInCount(MapSqlParameterSource params) {
-        // 월초 시점 미완료 미션 수
+        // 월초 시점 미완료 미션 수를 반환함
         return readInt(READ_MISSION_CARRY_IN_COUNT_SQL, params);
     }
 
     private int readAppealCarryInCount(MapSqlParameterSource params) {
-        // 월초 시점 미해결 NORMAL 이의제기 수
+        // 월초 시점 미해결 NORMAL 이의제기 수를 반환함
         return readInt(READ_APPEAL_CARRY_IN_COUNT_SQL, params);
     }
 

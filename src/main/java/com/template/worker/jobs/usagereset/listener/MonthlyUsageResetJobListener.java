@@ -42,31 +42,29 @@ public class MonthlyUsageResetJobListener implements JobExecutionListener {
                         MonthlyUsageResetJobConstants.JOB_CONTEXT_TARGET_MONTH,
                         targetMonthFromParam);
 
-        long dbUpdatedCount =
-                jobContext.getLong(
-                        MonthlyUsageResetJobConstants.JOB_CONTEXT_DB_UPDATED_FAMILY_COUNT, 0L);
-
-        long redisFamilyResetCount =
-                findStepWriteCount(
-                        jobExecution, MonthlyUsageResetJobConstants.STEP_RESET_REDIS_FAMILY_KEYS);
-        long redisCustomerResetCount =
-                findStepWriteCount(
+        long deletedPreviousMonthFamilyKeyCount =
+                findStepExecutionContextLong(
                         jobExecution,
-                        MonthlyUsageResetJobConstants.STEP_RESET_REDIS_CUSTOMER_MONTHLY_USAGE);
+                        MonthlyUsageResetJobConstants.STEP_RESET_REDIS_FAMILY_KEYS,
+                        MonthlyUsageResetJobConstants.STEP_CONTEXT_DELETED_FAMILY_KEY_COUNT);
+        long deletedPreviousMonthCustomerUsageKeyCount =
+                findStepExecutionContextLong(
+                        jobExecution,
+                        MonthlyUsageResetJobConstants.STEP_RESET_REDIS_CUSTOMER_MONTHLY_USAGE,
+                        MonthlyUsageResetJobConstants
+                                .STEP_CONTEXT_DELETED_CUSTOMER_MONTHLY_USAGE_KEY_COUNT);
 
         int failureCount = jobExecution.getAllFailureExceptions().size();
         log.info(
-                "Monthly usage reset summary. targetMonth={}, dbUpdatedFamilyCount={}, "
-                        + "redisFamilyKeyResetCount={}, redisCustomerMonthlyUsageResetCount={}, "
-                        + "failureCount={}, status={}",
+                "Monthly redis cleanup summary. targetMonth={},"
+                    + " deletedPreviousMonthFamilyKeyCount={},"
+                    + " deletedPreviousMonthCustomerUsageKeyCount={}, failureCount={}, status={}",
                 targetMonth,
-                dbUpdatedCount,
-                redisFamilyResetCount,
-                redisCustomerResetCount,
+                deletedPreviousMonthFamilyKeyCount,
+                deletedPreviousMonthCustomerUsageKeyCount,
                 failureCount,
                 jobExecution.getStatus());
 
-        // 예외 경로 누수 방지를 위해 최종 락 정리를 한 번 더 수행함
         String lockKey =
                 jobContext.getString(MonthlyUsageResetJobConstants.JOB_CONTEXT_LOCK_KEY, null);
         String lockOwner =
@@ -80,11 +78,11 @@ public class MonthlyUsageResetJobListener implements JobExecutionListener {
         }
     }
 
-    private long findStepWriteCount(JobExecution jobExecution, String stepName) {
-        // 대상 step의 writeCount를 조회해 처리 건수 집계에 사용함
+    private long findStepExecutionContextLong(
+            JobExecution jobExecution, String stepName, String contextKey) {
         for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
             if (stepExecution.getStepName().equals(stepName)) {
-                return stepExecution.getWriteCount();
+                return stepExecution.getExecutionContext().getLong(contextKey, 0L);
             }
         }
         return 0L;

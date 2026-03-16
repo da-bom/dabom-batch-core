@@ -36,8 +36,10 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
     @Test
     @DisplayName("aggregate - full week snapshot과 partial raw를 합쳐 월간 집계를 만든다")
     void aggregate_readsWeeklyFullCountsAndPartialRawCounts() {
+        jdbcTemplate.update("INSERT INTO family (id, deleted_at) VALUES (1, NULL)");
         jdbcTemplate.update(
-                "INSERT INTO family (id, total_quota_bytes, deleted_at) VALUES (1, 10000, NULL)");
+                "INSERT INTO family_quota (id, family_id, current_month, total_quota_bytes,"
+                    + " used_bytes, deleted_at) VALUES (1, 1, DATE '2026-03-01', 10000, 0, NULL)");
 
         jdbcTemplate.update(
                 "INSERT INTO family_recap_weekly (family_id, week_start_date, total_used_bytes,"
@@ -198,10 +200,14 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
     }
 
     @Test
-    @DisplayName("aggregate - overlapping weekly snapshot이 없으면 family quota와 empty highlight를 사용한다")
+    @DisplayName(
+            "aggregate - overlapping weekly snapshot이 없으면 targetMonth family quota와 empty"
+                    + " highlight를 사용한다")
     void aggregate_withoutWeeklySnapshot_fallsBackToFamilyQuota() {
+        jdbcTemplate.update("INSERT INTO family (id, deleted_at) VALUES (2, NULL)");
         jdbcTemplate.update(
-                "INSERT INTO family (id, total_quota_bytes, deleted_at) VALUES (2, 7000, NULL)");
+                "INSERT INTO family_quota (id, family_id, current_month, total_quota_bytes,"
+                    + " used_bytes, deleted_at) VALUES (2, 2, DATE '2026-03-01', 7000, 0, NULL)");
 
         MonthlyFamilyRecapSourceMetrics result = repository.aggregate(2L, LocalDate.of(2026, 3, 1));
 
@@ -232,27 +238,24 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
         jdbcTemplate.execute("DROP TABLE IF EXISTS mission_item");
         jdbcTemplate.execute("DROP TABLE IF EXISTS usage_record");
         jdbcTemplate.execute("DROP TABLE IF EXISTS family_recap_weekly");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS family_quota");
         jdbcTemplate.execute("DROP TABLE IF EXISTS family");
     }
 
     private void createTables() {
         jdbcTemplate.execute(
-                "CREATE TABLE family (id BIGINT PRIMARY KEY, total_quota_bytes BIGINT NOT NULL,"
-                        + " deleted_at TIMESTAMP NULL)");
+                "CREATE TABLE family (id BIGINT PRIMARY KEY, deleted_at TIMESTAMP NULL)");
         jdbcTemplate.execute(
-                "CREATE TABLE family_recap_weekly ("
-                        + "family_id BIGINT NOT NULL, "
-                        + "week_start_date DATE NOT NULL, "
-                        + "total_used_bytes BIGINT NOT NULL, "
-                        + "total_quota_bytes BIGINT NOT NULL, "
-                        + "usage_by_weekday VARCHAR(2000), "
-                        + "peak_usage VARCHAR(1000), "
-                        + "mission_created_count INT NOT NULL, "
-                        + "mission_completed_count INT NOT NULL, "
-                        + "mission_rejected_count INT NOT NULL, "
-                        + "total_appeal_count INT NOT NULL, "
-                        + "approved_appeal_count INT NOT NULL, "
-                        + "rejected_appeal_count INT NOT NULL)");
+                "CREATE TABLE family_quota (id BIGINT PRIMARY KEY, family_id BIGINT NOT NULL,"
+                    + " current_month DATE NOT NULL, total_quota_bytes BIGINT NOT NULL, used_bytes"
+                    + " BIGINT NOT NULL, deleted_at TIMESTAMP NULL)");
+        jdbcTemplate.execute(
+                "CREATE TABLE family_recap_weekly (family_id BIGINT NOT NULL, week_start_date DATE"
+                    + " NOT NULL, total_used_bytes BIGINT NOT NULL, total_quota_bytes BIGINT NOT"
+                    + " NULL, usage_by_weekday VARCHAR(2000), peak_usage VARCHAR(1000),"
+                    + " mission_created_count INT NOT NULL, mission_completed_count INT NOT NULL,"
+                    + " mission_rejected_count INT NOT NULL, total_appeal_count INT NOT NULL,"
+                    + " approved_appeal_count INT NOT NULL, rejected_appeal_count INT NOT NULL)");
         jdbcTemplate.execute(
                 "CREATE TABLE usage_record (id BIGINT PRIMARY KEY, family_id BIGINT NOT NULL,"
                         + " event_time TIMESTAMP NOT NULL, bytes_used BIGINT NOT NULL, deleted_at"
@@ -267,8 +270,8 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
                     + " TIMESTAMP NULL)");
         jdbcTemplate.execute(
                 "CREATE TABLE mission_log (id BIGINT PRIMARY KEY, mission_item_id BIGINT NOT NULL,"
-                        + " action_type VARCHAR(30) NOT NULL, created_at TIMESTAMP NOT NULL,"
-                        + " deleted_at TIMESTAMP NULL)");
+                    + " action_type VARCHAR(30) NOT NULL, created_at TIMESTAMP NOT NULL, deleted_at"
+                    + " TIMESTAMP NULL)");
         jdbcTemplate.execute(
                 "CREATE TABLE customer (id BIGINT PRIMARY KEY, name VARCHAR(100) NOT NULL,"
                         + " deleted_at TIMESTAMP NULL)");
@@ -276,17 +279,10 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
                 "CREATE TABLE policy_assignment (id BIGINT PRIMARY KEY, family_id BIGINT NOT NULL,"
                         + " deleted_at TIMESTAMP NULL)");
         jdbcTemplate.execute(
-                "CREATE TABLE policy_appeal ("
-                        + "id BIGINT PRIMARY KEY, "
-                        + "policy_assignment_id BIGINT NULL, "
-                        + "requester_id BIGINT NOT NULL, "
-                        + "type VARCHAR(20) NOT NULL, "
-                        + "status VARCHAR(20) NOT NULL, "
-                        + "request_reason VARCHAR(500) NULL, "
-                        + "resolved_by_id BIGINT NULL, "
-                        + "resolved_at TIMESTAMP NULL, "
-                        + "cancelled_at TIMESTAMP NULL, "
-                        + "created_at TIMESTAMP NOT NULL, "
-                        + "deleted_at TIMESTAMP NULL)");
+                "CREATE TABLE policy_appeal (id BIGINT PRIMARY KEY, policy_assignment_id BIGINT"
+                        + " NULL, requester_id BIGINT NOT NULL, type VARCHAR(20) NOT NULL, status"
+                        + " VARCHAR(20) NOT NULL, request_reason VARCHAR(500) NULL, resolved_by_id"
+                        + " BIGINT NULL, resolved_at TIMESTAMP NULL, cancelled_at TIMESTAMP NULL,"
+                        + " created_at TIMESTAMP NOT NULL, deleted_at TIMESTAMP NULL)");
     }
 }

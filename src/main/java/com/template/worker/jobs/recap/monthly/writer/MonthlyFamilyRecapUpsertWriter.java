@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MonthlyFamilyRecapUpsertWriter implements ItemWriter<MonthlyFamilyRecapRow> {
 
+    // 월간 recap 결과를 family_id와 report_month 기준으로 업서트
     private static final String UPSERT_MONTHLY_RECAP_SQL =
             """
             INSERT INTO family_recap_monthly (

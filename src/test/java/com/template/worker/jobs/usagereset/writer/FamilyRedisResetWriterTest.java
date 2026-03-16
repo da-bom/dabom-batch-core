@@ -1,10 +1,8 @@
-package com.template.worker.jobs.reconciliation.writer;
+package com.template.worker.jobs.usagereset.writer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,34 +26,39 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import com.template.worker.global.util.RedisKeyGenerator;
-import com.template.worker.jobs.reconciliation.model.FamilyMemberReconciliationTarget;
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobParameterSupport;
+import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
+import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobParameterSupport;
 
 @ExtendWith(MockitoExtension.class)
-class ReconciliationCustomerMonthlyUsageInvalidationWriterTest {
+class FamilyRedisResetWriterTest {
 
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private RedisKeyGenerator keyGenerator;
-    @Mock private DbRedisReconciliationJobParameterSupport parameterSupport;
+    @Mock private MonthlyUsageResetJobParameterSupport parameterSupport;
 
-    @InjectMocks private ReconciliationCustomerMonthlyUsageInvalidationWriter writer;
+    @InjectMocks private FamilyRedisResetWriter writer;
 
     @Test
-    @DisplayName("write - targetMonth suffix monthly usage 키만 삭제하고 삭제 건수를 기록한다")
-    void write_deletesOnlyTargetMonthlyUsageKeys_andStoresCountsInContext() {
+    @DisplayName("write - 전월 suffix family info와 remaining과 alert 키만 삭제한다")
+    void write_deletesOnlyPreviousMonthFamilyKeys() {
         JobParameters jobParameters =
                 new JobParametersBuilder().addString("targetMonth", "2026-03-01").toJobParameters();
-        JobInstance jobInstance = new JobInstance(1L, "dbRedisReconciliationJob");
+        JobInstance jobInstance = new JobInstance(1L, "monthly-usage-reset-job");
         JobExecution jobExecution = new JobExecution(jobInstance, jobParameters);
-        StepExecution stepExecution = new StepExecution("invalidate-customer-step", jobExecution);
+        StepExecution stepExecution = new StepExecution("reset-family-redis-step", jobExecution);
 
         LocalDate targetMonth = LocalDate.of(2026, 3, 1);
+        LocalDate previousMonth = LocalDate.of(2026, 2, 1);
         when(parameterSupport.resolveTargetMonth(any(JobParameters.class))).thenReturn(targetMonth);
-        when(keyGenerator.customerMonthlyUsageKey(10L, 100L, targetMonth))
-                .thenReturn("family:10:customer:100:usage:monthly:202603");
-        when(keyGenerator.customerMonthlyUsageKey(10L, 101L, targetMonth))
-                .thenReturn("family:10:customer:101:usage:monthly:202603");
+        when(keyGenerator.familyInfoKey(10L, previousMonth)).thenReturn("family:10:info:202602");
+        when(keyGenerator.familyRemainingKey(10L, previousMonth))
+                .thenReturn("family:10:remaining:202602");
+        when(keyGenerator.familyAlertThresholdKey(10L, 10, previousMonth))
+                .thenReturn("family:10:alert:THRESHOLD:10:202602");
+        when(keyGenerator.familyAlertThresholdKey(10L, 30, previousMonth))
+                .thenReturn("family:10:alert:THRESHOLD:30:202602");
+        when(keyGenerator.familyAlertThresholdKey(10L, 50, previousMonth))
+                .thenReturn("family:10:alert:THRESHOLD:50:202602");
 
         when(redisTemplate.executePipelined(any(RedisCallback.class)))
                 .thenAnswer(
@@ -65,29 +68,26 @@ class ReconciliationCustomerMonthlyUsageInvalidationWriterTest {
                             StringRedisConnection connection = mock(StringRedisConnection.class);
                             callback.doInRedis(connection);
 
-                            verify(connection).del("family:10:customer:100:usage:monthly:202603");
-                            verify(connection).del("family:10:customer:101:usage:monthly:202603");
-                            return List.of(1L, 0L);
+                            verify(connection)
+                                    .del(
+                                            "family:10:info:202602",
+                                            "family:10:remaining:202602",
+                                            "family:10:alert:THRESHOLD:10:202602",
+                                            "family:10:alert:THRESHOLD:30:202602",
+                                            "family:10:alert:THRESHOLD:50:202602");
+                            return List.of(4L);
                         });
 
         writer.beforeStep(stepExecution);
-        writer.write(
-                new Chunk<>(
-                        List.of(
-                                new FamilyMemberReconciliationTarget(10L, 100L),
-                                new FamilyMemberReconciliationTarget(10L, 101L))));
+        writer.write(new Chunk<>(List.of(10L)));
         writer.afterStep(stepExecution);
 
         assertThat(
                         stepExecution
                                 .getExecutionContext()
                                 .getLong(
-                                        DbRedisReconciliationJobConstants
-                                                .STEP_CONTEXT_DELETED_CUSTOMER_MONTHLY_USAGE_COUNT))
-                .isEqualTo(1L);
-
-        verify(keyGenerator, never()).familyInfoKey(anyLong(), any());
-        verify(keyGenerator, never()).familyRemainingKey(anyLong(), any());
-        verify(parameterSupport).resolveTargetMonth(jobParameters);
+                                        MonthlyUsageResetJobConstants
+                                                .STEP_CONTEXT_DELETED_FAMILY_KEY_COUNT))
+                .isEqualTo(4L);
     }
 }
