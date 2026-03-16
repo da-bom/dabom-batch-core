@@ -62,7 +62,7 @@ class PrecreateFamilyQuotaTaskletTest {
 
     @Test
     @DisplayName("execute - 최신 snapshot의 total quota를 이어받고 used bytes는 0으로 생성한다")
-    void execute_copiesLatestQuotaSnapshot() throws Exception {
+    void execute_copiesLatestQuotaSnapshot() {
         jdbcTemplate.update("INSERT INTO family (id, deleted_at) VALUES (10, NULL)");
         jdbcTemplate.update(
                 "INSERT INTO family_quota (id, family_id, current_month, total_quota_bytes,"
@@ -114,7 +114,7 @@ class PrecreateFamilyQuotaTaskletTest {
 
     @Test
     @DisplayName("execute - 대상 월 row가 이미 있으면 중복 생성하지 않는다")
-    void execute_doesNotCreateDuplicateTargetMonthRow() throws Exception {
+    void execute_doesNotCreateDuplicateTargetMonthRow() {
         jdbcTemplate.update("INSERT INTO family (id, deleted_at) VALUES (10, NULL)");
         jdbcTemplate.update(
                 "INSERT INTO family_quota (id, family_id, current_month, total_quota_bytes,"
@@ -146,7 +146,7 @@ class PrecreateFamilyQuotaTaskletTest {
 
     @Test
     @DisplayName("execute - 최신 snapshot이 없으면 건너뛰고 skip count를 남긴다")
-    void execute_skipsFamilyWhenSnapshotDoesNotExist() throws Exception {
+    void execute_skipsFamilyWhenSnapshotDoesNotExist() {
         jdbcTemplate.update("INSERT INTO family (id, deleted_at) VALUES (10, NULL)");
 
         StepExecution stepExecution = createStepExecution(LocalDate.of(2026, 4, 1));
@@ -181,7 +181,7 @@ class PrecreateFamilyQuotaTaskletTest {
 
     @Test
     @DisplayName("execute - Deadlock 예외가 두 번 나도 세 번째에 성공한다")
-    void execute_retriesDeadlockThenSucceeds() throws Exception {
+    void execute_retriesDeadlockThenSucceeds() {
         NamedParameterJdbcTemplate namedParameterJdbcTemplate =
                 mock(NamedParameterJdbcTemplate.class);
         PrecreateFamilyQuotaTasklet retryTasklet =
@@ -231,8 +231,7 @@ class PrecreateFamilyQuotaTaskletTest {
     }
 
     private void executeFamilyTasklet(
-            PrecreateFamilyQuotaTasklet retryTasklet, StepExecution stepExecution)
-            throws Exception {
+            PrecreateFamilyQuotaTasklet retryTasklet, StepExecution stepExecution) {
         retryTasklet.execute(
                 new StepContribution(stepExecution),
                 new ChunkContext(new StepContext(stepExecution)));

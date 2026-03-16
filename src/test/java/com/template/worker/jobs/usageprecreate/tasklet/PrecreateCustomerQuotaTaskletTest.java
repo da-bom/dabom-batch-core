@@ -61,7 +61,7 @@ class PrecreateCustomerQuotaTaskletTest {
 
     @Test
     @DisplayName("execute - 최신 snapshot의 monthly limit만 이어받고 차단 상태는 초기화한다")
-    void execute_copiesOnlyMonthlyLimitAndResetsBlockState() throws Exception {
+    void execute_copiesOnlyMonthlyLimitAndResetsBlockState() {
         jdbcTemplate.update(
                 "INSERT INTO family_member (id, family_id, customer_id, deleted_at) VALUES (1, 10,"
                         + " 100, NULL)");
@@ -122,7 +122,7 @@ class PrecreateCustomerQuotaTaskletTest {
 
     @Test
     @DisplayName("execute - 대상 월 row가 이미 있으면 중복 생성하지 않는다")
-    void execute_doesNotCreateDuplicateTargetMonthRow() throws Exception {
+    void execute_doesNotCreateDuplicateTargetMonthRow() {
         jdbcTemplate.update(
                 "INSERT INTO family_member (id, family_id, customer_id, deleted_at) VALUES (1, 10,"
                         + " 100, NULL)");
@@ -157,7 +157,7 @@ class PrecreateCustomerQuotaTaskletTest {
 
     @Test
     @DisplayName("execute - 최신 snapshot이 없어도 기본값으로 생성한다")
-    void execute_createsDefaultRowWhenSnapshotDoesNotExist() throws Exception {
+    void execute_createsDefaultRowWhenSnapshotDoesNotExist() {
         jdbcTemplate.update(
                 "INSERT INTO family_member (id, family_id, customer_id, deleted_at) VALUES (1, 10,"
                         + " 100, NULL)");
@@ -199,7 +199,7 @@ class PrecreateCustomerQuotaTaskletTest {
 
     @Test
     @DisplayName("execute - QueryTimeoutException 이 두 번 나도 세 번째에 성공한다")
-    void execute_retriesQueryTimeoutExceptionThenSucceeds() throws Exception {
+    void execute_retriesQueryTimeoutExceptionThenSucceeds() {
         NamedParameterJdbcTemplate namedParameterJdbcTemplate =
                 mock(NamedParameterJdbcTemplate.class);
         PrecreateCustomerQuotaTasklet retryTasklet =
@@ -244,8 +244,7 @@ class PrecreateCustomerQuotaTaskletTest {
     }
 
     private void executeCustomerTasklet(
-            PrecreateCustomerQuotaTasklet retryTasklet, StepExecution stepExecution)
-            throws Exception {
+            PrecreateCustomerQuotaTasklet retryTasklet, StepExecution stepExecution) {
         retryTasklet.execute(
                 new StepContribution(stepExecution),
                 new ChunkContext(new StepContext(stepExecution)));
