@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.global.retry.BatchRetrySupport;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobConstants;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobParameterSupport;
 
@@ -93,6 +94,7 @@ public class PrecreateFamilyQuotaTasklet implements Tasklet, StepExecutionListen
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final MonthlyUsagePrecreateJobParameterSupport parameterSupport;
+    private final BatchRetrySupport batchRetrySupport;
 
     private LocalDate targetMonth;
 
@@ -109,12 +111,24 @@ public class PrecreateFamilyQuotaTasklet implements Tasklet, StepExecutionListen
                 new MapSqlParameterSource().addValue("targetMonth", Date.valueOf(targetMonth));
 
         // 최신 스냅샷이 전혀 없는 가족 수를 먼저 계산해 skip 집계에 사용
-        Long skippedCount =
-                jdbcTemplate.queryForObject(COUNT_SKIPPED_FAMILY_QUOTA_SQL, params, Long.class);
-        long resolvedSkippedCount = skippedCount == null ? 0L : skippedCount;
-
-        // 최신 스냅샷이 있는 가족만 대상 월 row를 멱등적으로 선생성
-        int insertedCount = jdbcTemplate.update(INSERT_FAMILY_QUOTA_SQL, params);
+        PrecreateFamilyQuotaResult result =
+                batchRetrySupport
+                        .createDbRetryTemplate()
+                        .execute(
+                                retryContext -> {
+                                    Long skippedCount =
+                                            jdbcTemplate.queryForObject(
+                                                    COUNT_SKIPPED_FAMILY_QUOTA_SQL,
+                                                    params,
+                                                    Long.class);
+                                    long resolvedSkippedCount =
+                                            skippedCount == null ? 0L : skippedCount;
+                                    // 최신 스냅샷이 있는 가족만 대상 월 row를 멱등적으로 선생성
+                                    int insertedCount =
+                                            jdbcTemplate.update(INSERT_FAMILY_QUOTA_SQL, params);
+                                    return new PrecreateFamilyQuotaResult(
+                                            insertedCount, resolvedSkippedCount);
+                                });
 
         StepExecution stepExecution = contribution.getStepExecution();
         stepExecution
@@ -122,26 +136,28 @@ public class PrecreateFamilyQuotaTasklet implements Tasklet, StepExecutionListen
                 .getExecutionContext()
                 .putLong(
                         MonthlyUsagePrecreateJobConstants.JOB_CONTEXT_PRECREATED_FAMILY_QUOTA_COUNT,
-                        insertedCount);
+                        result.insertedCount());
         stepExecution
                 .getJobExecution()
                 .getExecutionContext()
                 .putLong(
                         MonthlyUsagePrecreateJobConstants.JOB_CONTEXT_SKIPPED_FAMILY_QUOTA_COUNT,
-                        resolvedSkippedCount);
+                        result.skippedCount());
 
-        if (resolvedSkippedCount > 0) {
+        if (result.skippedCount() > 0) {
             log.warn(
                     "Skipped family_quota precreate because latest snapshot was not found."
                             + " targetMonth={}, skippedCount={}",
                     targetMonth,
-                    resolvedSkippedCount);
+                    result.skippedCount());
         }
         log.info(
                 "Precreated family_quota rows for targetMonth. targetMonth={}, insertedCount={}",
                 targetMonth,
-                insertedCount);
+                result.insertedCount());
 
         return RepeatStatus.FINISHED;
     }
+
+    private record PrecreateFamilyQuotaResult(int insertedCount, long skippedCount) {}
 }

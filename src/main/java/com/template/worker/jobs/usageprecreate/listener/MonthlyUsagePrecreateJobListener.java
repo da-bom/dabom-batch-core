@@ -73,12 +73,19 @@ public class MonthlyUsagePrecreateJobListener implements JobExecutionListener {
         String lockOwner =
                 jobContext.getString(
                         MonthlyUsagePrecreateJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
-        boolean released = lockManager.releaseIfOwner(lockKey, lockOwner);
-        if (lockKey != null) {
-            log.info(
-                    "Monthly usage precreate final lock cleanup. lockKey={}, released={}",
+        try {
+            boolean released = lockManager.releaseIfOwner(lockKey, lockOwner);
+            if (lockKey != null) {
+                log.info(
+                        "Monthly usage precreate final lock cleanup. lockKey={}, released={}",
+                        lockKey,
+                        released);
+            }
+        } catch (Exception exception) {
+            log.error(
+                    "Monthly usage precreate final lock cleanup failed. lockKey={}",
                     lockKey,
-                    released);
+                    exception);
         }
     }
 }

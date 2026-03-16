@@ -69,12 +69,19 @@ public class MonthlyUsageResetJobListener implements JobExecutionListener {
                 jobContext.getString(MonthlyUsageResetJobConstants.JOB_CONTEXT_LOCK_KEY, null);
         String lockOwner =
                 jobContext.getString(MonthlyUsageResetJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
-        boolean released = monthlyResetLockManager.releaseIfOwner(lockKey, lockOwner);
-        if (lockKey != null) {
-            log.info(
-                    "Monthly usage reset final lock cleanup. lockKey={}, released={}",
+        try {
+            boolean released = monthlyResetLockManager.releaseIfOwner(lockKey, lockOwner);
+            if (lockKey != null) {
+                log.info(
+                        "Monthly usage reset final lock cleanup. lockKey={}, released={}",
+                        lockKey,
+                        released);
+            }
+        } catch (Exception exception) {
+            log.error(
+                    "Monthly usage reset final lock cleanup failed. lockKey={}",
                     lockKey,
-                    released);
+                    exception);
         }
     }
 

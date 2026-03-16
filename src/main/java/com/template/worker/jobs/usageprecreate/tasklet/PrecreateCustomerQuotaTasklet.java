@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.global.retry.BatchRetrySupport;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobConstants;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobParameterSupport;
 
@@ -82,6 +83,7 @@ public class PrecreateCustomerQuotaTasklet implements Tasklet, StepExecutionList
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final MonthlyUsagePrecreateJobParameterSupport parameterSupport;
+    private final BatchRetrySupport batchRetrySupport;
 
     private LocalDate targetMonth;
 
@@ -98,7 +100,12 @@ public class PrecreateCustomerQuotaTasklet implements Tasklet, StepExecutionList
                 new MapSqlParameterSource().addValue("targetMonth", Date.valueOf(targetMonth));
 
         // 대상 월 row가 없는 구성원만 멱등적으로 선생성
-        int insertedCount = jdbcTemplate.update(INSERT_CUSTOMER_QUOTA_SQL, params);
+        int insertedCount =
+                batchRetrySupport
+                        .createDbRetryTemplate()
+                        .execute(
+                                retryContext ->
+                                        jdbcTemplate.update(INSERT_CUSTOMER_QUOTA_SQL, params));
 
         StepExecution stepExecution = contribution.getStepExecution();
         stepExecution

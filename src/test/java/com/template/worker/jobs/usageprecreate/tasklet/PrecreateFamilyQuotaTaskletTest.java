@@ -1,7 +1,13 @@
 package com.template.worker.jobs.usageprecreate.tasklet;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -22,10 +28,13 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import com.template.worker.global.retry.BatchRetrySupport;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobConstants;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobParameterSupport;
 
@@ -43,7 +52,9 @@ class PrecreateFamilyQuotaTaskletTest {
         jdbcTemplate = new JdbcTemplate(dataSource);
         tasklet =
                 new PrecreateFamilyQuotaTasklet(
-                        new NamedParameterJdbcTemplate(dataSource), parameterSupport);
+                        new NamedParameterJdbcTemplate(dataSource),
+                        parameterSupport,
+                        new BatchRetrySupport(3, 0L));
 
         dropTables();
         createTables();
@@ -166,6 +177,61 @@ class PrecreateFamilyQuotaTaskletTest {
                                         MonthlyUsagePrecreateJobConstants
                                                 .JOB_CONTEXT_SKIPPED_FAMILY_QUOTA_COUNT))
                 .isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("execute - Deadlock 예외가 두 번 나도 세 번째에 성공한다")
+    void execute_retriesDeadlockThenSucceeds() throws Exception {
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate =
+                mock(NamedParameterJdbcTemplate.class);
+        PrecreateFamilyQuotaTasklet retryTasklet =
+                new PrecreateFamilyQuotaTasklet(
+                        namedParameterJdbcTemplate, parameterSupport, new BatchRetrySupport(3, 0L));
+        StepExecution stepExecution = createStepExecution(LocalDate.of(2026, 4, 1));
+
+        when(namedParameterJdbcTemplate.queryForObject(
+                        anyString(), any(MapSqlParameterSource.class), eq(Long.class)))
+                .thenThrow(new DeadlockLoserDataAccessException("deadlock", null))
+                .thenThrow(new DeadlockLoserDataAccessException("deadlock", null))
+                .thenReturn(0L);
+        when(namedParameterJdbcTemplate.update(anyString(), any(MapSqlParameterSource.class)))
+                .thenReturn(1);
+
+        retryTasklet.beforeStep(stepExecution);
+        retryTasklet.execute(
+                new StepContribution(stepExecution),
+                new ChunkContext(new StepContext(stepExecution)));
+
+        verify(namedParameterJdbcTemplate, times(3))
+                .queryForObject(anyString(), any(MapSqlParameterSource.class), eq(Long.class));
+        verify(namedParameterJdbcTemplate).update(anyString(), any(MapSqlParameterSource.class));
+    }
+
+    @Test
+    @DisplayName("execute - Deadlock 예외가 재시도 한도를 넘으면 예외를 전파한다")
+    void execute_throwsWhenDeadlockExceedsRetryLimit() {
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate =
+                mock(NamedParameterJdbcTemplate.class);
+        PrecreateFamilyQuotaTasklet retryTasklet =
+                new PrecreateFamilyQuotaTasklet(
+                        namedParameterJdbcTemplate, parameterSupport, new BatchRetrySupport(3, 0L));
+        StepExecution stepExecution = createStepExecution(LocalDate.of(2026, 4, 1));
+
+        when(namedParameterJdbcTemplate.queryForObject(
+                        anyString(), any(MapSqlParameterSource.class), eq(Long.class)))
+                .thenThrow(new DeadlockLoserDataAccessException("deadlock", null));
+
+        retryTasklet.beforeStep(stepExecution);
+
+        assertThatThrownBy(
+                        () ->
+                                retryTasklet.execute(
+                                        new StepContribution(stepExecution),
+                                        new ChunkContext(new StepContext(stepExecution))))
+                .isInstanceOf(DeadlockLoserDataAccessException.class);
+
+        verify(namedParameterJdbcTemplate, times(3))
+                .queryForObject(anyString(), any(MapSqlParameterSource.class), eq(Long.class));
     }
 
     private StepExecution createStepExecution(LocalDate targetMonth) {
