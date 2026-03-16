@@ -43,7 +43,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/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}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
 
 volumes:
   mysql_data:

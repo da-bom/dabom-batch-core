@@ -49,7 +49,7 @@ logging:
 
 slack:
   webhook:
-    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/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}
+    url: ${SLACK_WEBHOOK_URL:}
 
 ---
 
