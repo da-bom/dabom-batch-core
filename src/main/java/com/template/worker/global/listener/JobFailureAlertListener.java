@@ -3,6 +3,7 @@ package com.template.worker.global.listener;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.lettuce.core.RedisCommandTimeoutException;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
@@ -142,7 +143,7 @@ public class JobFailureAlertListener implements JobExecutionListener {
                     && current.getMessage().contains(REDIS_TIMEOUT_MESSAGE)) {
                 return true;
             }
-            if (REDIS_COMMAND_TIMEOUT_EXCEPTION.equals(current.getClass().getSimpleName())) {
+            if (current instanceof RedisCommandTimeoutException) {
                 return true;
             }
             current = current.getCause();
