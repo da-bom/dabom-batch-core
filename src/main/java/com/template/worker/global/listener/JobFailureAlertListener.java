@@ -33,7 +33,9 @@ public class JobFailureAlertListener implements JobExecutionListener {
     private final BatchRetrySupport batchRetrySupport;
 
     @Override
-    public void beforeJob(JobExecution jobExecution) {}
+    public void beforeJob(JobExecution jobExecution) {
+        // 사전 처리 없음
+    }
 
     @Override
     public void afterJob(JobExecution jobExecution) {
