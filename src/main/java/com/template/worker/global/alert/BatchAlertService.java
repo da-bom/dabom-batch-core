@@ -1,7 +1,9 @@
 package com.template.worker.global.alert;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,36 +46,27 @@ public class BatchAlertService {
             String parameterSummary,
             String errorSummary,
             String technicalDetail) {
+        Map<String, String> details = new LinkedHashMap<>();
+        details.put("잡", sanitize(jobName));
+        details.put("실행 ID", jobExecutionId == null ? UNKNOWN_VALUE : jobExecutionId.toString());
+        details.put("파라미터", sanitize(parameterSummary));
+        details.put("상태", "FAILED");
+        details.put("원인 요약", sanitize(errorSummary));
+        details.put("원본 예외", sanitize(technicalDetail));
+
         // 운영자가 한눈에 보도록 요약/원본 예외를 멀티라인 메시지로 구성
-        sendAlert(
-                buildMultilineMessage(
-                        JOB_FAILURE_TITLE,
-                        "잡",
-                        sanitize(jobName),
-                        "실행 ID",
-                        jobExecutionId == null ? UNKNOWN_VALUE : jobExecutionId.toString(),
-                        "파라미터",
-                        sanitize(parameterSummary),
-                        "상태",
-                        "FAILED",
-                        "원인 요약",
-                        sanitize(errorSummary),
-                        "원본 예외",
-                        sanitize(technicalDetail)));
+        sendAlert(buildMultilineMessage(JOB_FAILURE_TITLE, details));
     }
 
     public void sendSchedulerFailureAlert(
             String schedulerName, String parameterSummary, String errorMessage) {
+        Map<String, String> details = new LinkedHashMap<>();
+        details.put("스케줄러", sanitize(schedulerName));
+        details.put("파라미터", sanitize(parameterSummary));
+        details.put("원인", sanitize(errorMessage));
+
         // 스케줄러 launch 단계 예외는 Job FAILED 알람과 구분해 별도 제목으로 보냄
-        sendAlert(
-                buildMultilineMessage(
-                        SCHEDULER_FAILURE_TITLE,
-                        "스케줄러",
-                        sanitize(schedulerName),
-                        "파라미터",
-                        sanitize(parameterSummary),
-                        "원인",
-                        sanitize(errorMessage)));
+        sendAlert(buildMultilineMessage(SCHEDULER_FAILURE_TITLE, details));
     }
 
     private void sendAlert(String message) {
@@ -106,16 +99,11 @@ public class BatchAlertService {
         return value.replace("\r\n", " ").replace("\n", " ").trim();
     }
 
-    private String buildMultilineMessage(String title, String... keyValues) {
-        // text payload만으로도 읽기 좋게 보이도록 bullet 형식으로 렌더링
+    private String buildMultilineMessage(String title, Map<String, String> keyValues) {
+        // 표시 순서를 유지한 key-value 맵을 bullet 형식으로 렌더링
         List<String> lines = new ArrayList<>();
         lines.add(title);
-
-        for (int index = 0; index < keyValues.length; index += 2) {
-            String key = keyValues[index];
-            String value = keyValues[index + 1];
-            lines.add(String.format("• %s: %s", key, value));
-        }
+        keyValues.forEach((key, value) -> lines.add(String.format("• %s: %s", key, value)));
 
         return String.join("\n", lines);
     }
