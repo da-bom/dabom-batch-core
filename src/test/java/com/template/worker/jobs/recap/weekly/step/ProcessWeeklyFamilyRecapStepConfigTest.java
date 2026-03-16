@@ -21,7 +21,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
-import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.template.worker.global.retry.BatchRetrySupport;
@@ -61,7 +61,7 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
         doAnswer(
                         invocation -> {
                             if (attempts.incrementAndGet() < 3) {
-                                throw new DeadlockLoserDataAccessException("deadlock", null);
+                                throw new PessimisticLockingFailureException("deadlock", null);
                             }
                             return null;
                         })
@@ -100,7 +100,7 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
 
         when(reader.read()).thenReturn(10L, null);
         when(processor.process(10L)).thenReturn(createRow());
-        doThrow(new DeadlockLoserDataAccessException("deadlock", null)).when(writer).write(any());
+        doThrow(new PessimisticLockingFailureException("deadlock", null)).when(writer).write(any());
 
         Step step = stepConfig.processWeeklyFamilyRecapStep();
         StepExecution stepExecution = createStepExecution("process-weekly-family-recap-step");

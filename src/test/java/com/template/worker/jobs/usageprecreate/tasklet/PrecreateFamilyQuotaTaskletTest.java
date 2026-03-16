@@ -28,7 +28,7 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
-import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -191,8 +191,8 @@ class PrecreateFamilyQuotaTaskletTest {
 
         when(namedParameterJdbcTemplate.queryForObject(
                         anyString(), any(MapSqlParameterSource.class), eq(Long.class)))
-                .thenThrow(new DeadlockLoserDataAccessException("deadlock", null))
-                .thenThrow(new DeadlockLoserDataAccessException("deadlock", null))
+                .thenThrow(new PessimisticLockingFailureException("deadlock", null))
+                .thenThrow(new PessimisticLockingFailureException("deadlock", null))
                 .thenReturn(0L);
         when(namedParameterJdbcTemplate.update(anyString(), any(MapSqlParameterSource.class)))
                 .thenReturn(1);
@@ -219,19 +219,23 @@ class PrecreateFamilyQuotaTaskletTest {
 
         when(namedParameterJdbcTemplate.queryForObject(
                         anyString(), any(MapSqlParameterSource.class), eq(Long.class)))
-                .thenThrow(new DeadlockLoserDataAccessException("deadlock", null));
+                .thenThrow(new PessimisticLockingFailureException("deadlock", null));
 
         retryTasklet.beforeStep(stepExecution);
 
-        assertThatThrownBy(
-                        () ->
-                                retryTasklet.execute(
-                                        new StepContribution(stepExecution),
-                                        new ChunkContext(new StepContext(stepExecution))))
-                .isInstanceOf(DeadlockLoserDataAccessException.class);
+        assertThatThrownBy(() -> executeFamilyTasklet(retryTasklet, stepExecution))
+                .isInstanceOf(PessimisticLockingFailureException.class);
 
         verify(namedParameterJdbcTemplate, times(3))
                 .queryForObject(anyString(), any(MapSqlParameterSource.class), eq(Long.class));
+    }
+
+    private void executeFamilyTasklet(
+            PrecreateFamilyQuotaTasklet retryTasklet, StepExecution stepExecution)
+            throws Exception {
+        retryTasklet.execute(
+                new StepContribution(stepExecution),
+                new ChunkContext(new StepContext(stepExecution)));
     }
 
     private StepExecution createStepExecution(LocalDate targetMonth) {

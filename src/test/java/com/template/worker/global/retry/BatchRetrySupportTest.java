@@ -41,15 +41,7 @@ class BatchRetrySupportTest {
         BatchRetrySupport batchRetrySupport = new BatchRetrySupport(3, 0L);
         AtomicInteger attempts = new AtomicInteger();
 
-        assertThatThrownBy(
-                        () ->
-                                batchRetrySupport
-                                        .createDbRetryTemplate()
-                                        .execute(
-                                                retryContext -> {
-                                                    attempts.incrementAndGet();
-                                                    throw new IllegalArgumentException("bad");
-                                                }))
+        assertThatThrownBy(() -> executeNonRetryableFailure(batchRetrySupport, attempts))
                 .isInstanceOf(IllegalArgumentException.class);
 
         assertThat(attempts).hasValue(1);
@@ -72,5 +64,16 @@ class BatchRetrySupportTest {
                         });
 
         assertThat(attempts).hasValue(3);
+    }
+
+    private void executeNonRetryableFailure(
+            BatchRetrySupport batchRetrySupport, AtomicInteger attempts) {
+        batchRetrySupport
+                .createDbRetryTemplate()
+                .execute(
+                        retryContext -> {
+                            attempts.incrementAndGet();
+                            throw new IllegalArgumentException("bad");
+                        });
     }
 }

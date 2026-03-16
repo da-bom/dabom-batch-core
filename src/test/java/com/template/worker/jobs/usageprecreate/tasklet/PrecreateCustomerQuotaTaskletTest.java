@@ -236,15 +236,19 @@ class PrecreateCustomerQuotaTaskletTest {
 
         retryTasklet.beforeStep(stepExecution);
 
-        assertThatThrownBy(
-                        () ->
-                                retryTasklet.execute(
-                                        new StepContribution(stepExecution),
-                                        new ChunkContext(new StepContext(stepExecution))))
+        assertThatThrownBy(() -> executeCustomerTasklet(retryTasklet, stepExecution))
                 .isInstanceOf(QueryTimeoutException.class);
 
         verify(namedParameterJdbcTemplate, times(3))
                 .update(anyString(), any(MapSqlParameterSource.class));
+    }
+
+    private void executeCustomerTasklet(
+            PrecreateCustomerQuotaTasklet retryTasklet, StepExecution stepExecution)
+            throws Exception {
+        retryTasklet.execute(
+                new StepContribution(stepExecution),
+                new ChunkContext(new StepContext(stepExecution)));
     }
 
     private StepExecution createStepExecution(LocalDate targetMonth) {
