@@ -3,7 +3,6 @@ package com.template.worker.global.listener;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.lettuce.core.RedisCommandTimeoutException;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
@@ -16,6 +15,8 @@ import org.springframework.util.StringUtils;
 
 import com.template.worker.global.alert.BatchAlertService;
 import com.template.worker.global.retry.BatchRetrySupport;
+
+import io.lettuce.core.RedisCommandTimeoutException;
 
 import lombok.RequiredArgsConstructor;
 
