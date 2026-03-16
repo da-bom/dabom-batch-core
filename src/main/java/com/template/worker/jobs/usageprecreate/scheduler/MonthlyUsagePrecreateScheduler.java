@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.global.alert.BatchAlertService;
 import com.template.worker.global.launcher.BatchJobLauncher;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobConstants;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobParameterSupport;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MonthlyUsagePrecreateScheduler {
 
     private final BatchJobLauncher launcher;
+    private final BatchAlertService batchAlertService;
     private final MonthlyUsagePrecreateJobParameterSupport parameterSupport;
 
     @Scheduled(
@@ -49,6 +51,10 @@ public class MonthlyUsagePrecreateScheduler {
                     "Failed to run monthly usage precreate job by scheduler. targetMonth={}",
                     targetMonth,
                     exception);
+            batchAlertService.sendSchedulerFailureAlert(
+                    "monthly-usage-precreate-scheduler",
+                    "targetMonth=" + targetMonth,
+                    exception.getMessage());
         }
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.template.worker.global.listener.JobFailureAlertListener;
 import com.template.worker.global.listener.JobResultListener;
 import com.template.worker.jobs.reconciliation.listener.DbRedisReconciliationJobListener;
 import com.template.worker.jobs.reconciliation.step.AcquireReconciliationLockStepConfig;
@@ -22,6 +23,7 @@ public class DbRedisReconciliationJobConfig {
 
     private final JobRepository jobRepository;
     private final JobResultListener jobResultListener;
+    private final JobFailureAlertListener jobFailureAlertListener;
     private final DbRedisReconciliationJobListener dbRedisReconciliationJobListener;
     private final AcquireReconciliationLockStepConfig acquireReconciliationLockStepConfig;
     private final InvalidateFamilyInfoAndRemainingStepConfig
@@ -33,6 +35,7 @@ public class DbRedisReconciliationJobConfig {
     public Job dbRedisReconciliationJob() {
         return new JobBuilder(DbRedisReconciliationJobConstants.JOB_NAME, jobRepository)
                 .listener(jobResultListener)
+                .listener(jobFailureAlertListener)
                 .listener(dbRedisReconciliationJobListener)
                 .start(acquireReconciliationLockStepConfig.acquireReconciliationLockStep())
                 // 락 미획득이면 정상 종료해 중복 실행을 방지함

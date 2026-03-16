@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.global.alert.BatchAlertService;
 import com.template.worker.global.launcher.BatchJobLauncher;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
 
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DbRedisReconciliationScheduler {
 
     private final BatchJobLauncher launcher;
+    private final BatchAlertService batchAlertService;
 
     @Scheduled(
             cron = "${batch.schedules.db-redis-reconciliation.cron:0 0 3 * * *}",
@@ -46,6 +48,10 @@ public class DbRedisReconciliationScheduler {
                     "Failed to run DB-Redis reconciliation job by scheduler. targetMonth={}",
                     targetMonth,
                     exception);
+            batchAlertService.sendSchedulerFailureAlert(
+                    "db-redis-reconciliation-scheduler",
+                    "targetMonth=" + targetMonth,
+                    exception.getMessage());
         }
     }
 }

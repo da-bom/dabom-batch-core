@@ -6,6 +6,7 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.template.worker.global.listener.JobFailureAlertListener;
 import com.template.worker.global.listener.JobResultListener;
 import com.template.worker.jobs.usagereset.listener.MonthlyUsageResetJobListener;
 import com.template.worker.jobs.usagereset.step.AcquireMonthlyResetLockStepConfig;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class MonthlyUsageResetJobConfig {
     private final JobRepository jobRepository;
     private final JobResultListener jobResultListener;
+    private final JobFailureAlertListener jobFailureAlertListener;
     private final MonthlyUsageResetJobListener monthlyUsageResetJobListener;
     private final AcquireMonthlyResetLockStepConfig acquireMonthlyResetLockStepConfig;
     private final ResetRedisFamilyKeysStepConfig resetRedisFamilyKeysStepConfig;
@@ -31,6 +33,7 @@ public class MonthlyUsageResetJobConfig {
     public Job monthlyUsageResetJob() {
         return new JobBuilder(MonthlyUsageResetJobConstants.JOB_NAME, jobRepository)
                 .listener(jobResultListener)
+                .listener(jobFailureAlertListener)
                 .listener(monthlyUsageResetJobListener)
                 .start(acquireMonthlyResetLockStepConfig.acquireMonthlyResetLockStep())
                 // 락 미획득이면 정상 종료해 중복 실행을 방지함

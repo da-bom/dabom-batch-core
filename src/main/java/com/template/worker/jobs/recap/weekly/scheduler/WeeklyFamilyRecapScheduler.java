@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.global.alert.BatchAlertService;
 import com.template.worker.global.launcher.BatchJobLauncher;
 import com.template.worker.jobs.recap.weekly.support.WeekStartDateParameterSupport;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapJobConstants;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class WeeklyFamilyRecapScheduler {
 
     private final BatchJobLauncher launcher;
+    private final BatchAlertService batchAlertService;
     private final WeekStartDateParameterSupport parameterSupport;
 
     @Scheduled(
@@ -43,6 +45,10 @@ public class WeeklyFamilyRecapScheduler {
                     "Failed to run weekly family recap job by scheduler. weekStartDate={}",
                     weekStartDate,
                     exception);
+            batchAlertService.sendSchedulerFailureAlert(
+                    "weekly-family-recap-scheduler",
+                    "weekStartDate=" + weekStartDate,
+                    exception.getMessage());
         }
     }
 }

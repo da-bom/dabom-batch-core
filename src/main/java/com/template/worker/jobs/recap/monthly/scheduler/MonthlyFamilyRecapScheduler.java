@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.global.alert.BatchAlertService;
 import com.template.worker.global.launcher.BatchJobLauncher;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapJobConstants;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapJobParameterSupport;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MonthlyFamilyRecapScheduler {
 
     private final BatchJobLauncher launcher;
+    private final BatchAlertService batchAlertService;
     private final MonthlyFamilyRecapJobParameterSupport parameterSupport;
 
     @Scheduled(
@@ -43,6 +45,10 @@ public class MonthlyFamilyRecapScheduler {
                     "Failed to run monthly family recap job by scheduler. targetMonth={}",
                     targetMonth,
                     exception);
+            batchAlertService.sendSchedulerFailureAlert(
+                    "monthly-family-recap-scheduler",
+                    "targetMonth=" + targetMonth,
+                    exception.getMessage());
         }
     }
 }

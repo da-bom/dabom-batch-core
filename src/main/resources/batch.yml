@@ -7,6 +7,10 @@ spring:
       initialize-schema: always
 
 batch:
+  retry:
+    limit: ${BATCH_RETRY_LIMIT:3}
+    backoff-millis: ${BATCH_RETRY_BACKOFF_MILLIS:3000}
+
   schedules:
     weekly-family-recap:
       enabled: ${BATCH_WEEKLY_FAMILY_RECAP_ENABLED:false}
