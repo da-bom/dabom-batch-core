@@ -25,8 +25,8 @@ public class BatchRetrySupport {
     private final long backOffMillis;
 
     public BatchRetrySupport(
-            @Value("${batch.retry.limit}") int retryLimit,
-            @Value("${batch.retry.backoff-millis}") long backOffMillis) {
+            @Value("${batch.retry.limit:10}") int retryLimit,
+            @Value("${batch.retry.backoff-millis:3000}") long backOffMillis) {
         Assert.isTrue(retryLimit > 0, "batch.retry.limit must be greater than zero");
         Assert.isTrue(backOffMillis >= 0L, "batch.retry.backoff-millis must be zero or greater");
         this.retryLimit = retryLimit;
