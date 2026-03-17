@@ -18,6 +18,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UsageEventOutboxQueryRepository {
 
+    private static final String PARAM_ID = "id";
+    private static final String PARAM_STATUS = "status";
+    private static final String PARAM_NOW = "now";
+    private static final String PARAM_UPDATED_AT = "updatedAt";
+    private static final String PARAM_RETRY_COUNT = "retryCount";
+    private static final String PARAM_NEXT_RETRY_AT = "nextRetryAt";
+    private static final String PARAM_LAST_ERROR = "lastError";
+    private static final String PARAM_PUBLISH_PENDING = "publishPending";
+    private static final String PARAM_FAILED = "failed";
+    private static final String PARAM_SENT = "sent";
+    private static final String PARAM_BATCH_SIZE = "batchSize";
+    private static final String PARAM_MAX_RETRY = "maxRetry";
+
     private static final String POLL_SQL =
             """
             SELECT id,
@@ -79,19 +92,21 @@ public class UsageEventOutboxQueryRepository {
             int batchSize, int maxRetry, LocalDateTime now) {
         MapSqlParameterSource params =
                 new MapSqlParameterSource()
-                        .addValue("batchSize", batchSize)
-                        .addValue("maxRetry", maxRetry)
-                        .addValue("now", Timestamp.valueOf(now))
-                        .addValue("publishPending", UsageEventOutboxStatus.PUBLISH_PENDING.name());
+                        .addValue(PARAM_BATCH_SIZE, batchSize)
+                        .addValue(PARAM_MAX_RETRY, maxRetry)
+                        .addValue(PARAM_NOW, Timestamp.valueOf(now))
+                        .addValue(
+                                PARAM_PUBLISH_PENDING,
+                                UsageEventOutboxStatus.PUBLISH_PENDING.name());
         return jdbcTemplate.query(POLL_SQL, params, ROW_MAPPER);
     }
 
     public void markSent(long id, LocalDateTime updatedAt) {
         MapSqlParameterSource params =
                 new MapSqlParameterSource()
-                        .addValue("id", id)
-                        .addValue("sent", UsageEventOutboxStatus.SENT.name())
-                        .addValue("updatedAt", Timestamp.valueOf(updatedAt));
+                        .addValue(PARAM_ID, id)
+                        .addValue(PARAM_SENT, UsageEventOutboxStatus.SENT.name())
+                        .addValue(PARAM_UPDATED_AT, Timestamp.valueOf(updatedAt));
         jdbcTemplate.update(MARK_SENT_SQL, params);
     }
 
@@ -103,29 +118,30 @@ public class UsageEventOutboxQueryRepository {
             LocalDateTime updatedAt) {
         MapSqlParameterSource params =
                 new MapSqlParameterSource()
-                        .addValue("id", id)
-                        .addValue("publishPending", UsageEventOutboxStatus.PUBLISH_PENDING.name())
-                        .addValue("retryCount", retryCount)
-                        .addValue("nextRetryAt", Timestamp.valueOf(nextRetryAt))
-                        .addValue("lastError", truncate(lastError))
-                        .addValue("updatedAt", Timestamp.valueOf(updatedAt));
+                        .addValue(PARAM_ID, id)
+                        .addValue(
+                                PARAM_PUBLISH_PENDING,
+                                UsageEventOutboxStatus.PUBLISH_PENDING.name())
+                        .addValue(PARAM_RETRY_COUNT, retryCount)
+                        .addValue(PARAM_NEXT_RETRY_AT, Timestamp.valueOf(nextRetryAt))
+                        .addValue(PARAM_LAST_ERROR, truncate(lastError))
+                        .addValue(PARAM_UPDATED_AT, Timestamp.valueOf(updatedAt));
         jdbcTemplate.update(MARK_PENDING_FOR_RETRY_SQL, params);
     }
 
     public void markFailed(long id, int retryCount, String lastError, LocalDateTime updatedAt) {
         MapSqlParameterSource params =
                 new MapSqlParameterSource()
-                        .addValue("id", id)
-                        .addValue("failed", UsageEventOutboxStatus.FAILED.name())
-                        .addValue("retryCount", retryCount)
-                        .addValue("lastError", truncate(lastError))
-                        .addValue("updatedAt", Timestamp.valueOf(updatedAt));
+                        .addValue(PARAM_ID, id)
+                        .addValue(PARAM_FAILED, UsageEventOutboxStatus.FAILED.name())
+                        .addValue(PARAM_RETRY_COUNT, retryCount)
+                        .addValue(PARAM_LAST_ERROR, truncate(lastError))
+                        .addValue(PARAM_UPDATED_AT, Timestamp.valueOf(updatedAt));
         jdbcTemplate.update(MARK_FAILED_SQL, params);
     }
 
     public int countByStatus(UsageEventOutboxStatus status) {
-        MapSqlParameterSource params =
-                new MapSqlParameterSource().addValue("status", status.name());
+        MapSqlParameterSource params = new MapSqlParameterSource().addValue(PARAM_STATUS, status.name());
         Integer count =
                 jdbcTemplate.queryForObject(
                         """
@@ -142,8 +158,10 @@ public class UsageEventOutboxQueryRepository {
     public LocalDateTime findOldestPendingCreatedAt(LocalDateTime now) {
         MapSqlParameterSource params =
                 new MapSqlParameterSource()
-                        .addValue("publishPending", UsageEventOutboxStatus.PUBLISH_PENDING.name())
-                        .addValue("now", Timestamp.valueOf(now));
+                        .addValue(
+                                PARAM_PUBLISH_PENDING,
+                                UsageEventOutboxStatus.PUBLISH_PENDING.name())
+                        .addValue(PARAM_NOW, Timestamp.valueOf(now));
         Timestamp timestamp =
                 jdbcTemplate.queryForObject(
                         """
