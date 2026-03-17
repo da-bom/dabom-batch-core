@@ -2,9 +2,9 @@ package com.template.worker.jobs.usagereset.tasklet;
 
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
 import com.template.worker.jobs.common.tasklet.AbstractLockReleaseTasklet;
-import com.template.worker.jobs.usagereset.support.MonthlyResetLockManager;
-import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,11 +12,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MonthlyResetLockReleaseTasklet extends AbstractLockReleaseTasklet {
 
-    private final MonthlyResetLockManager monthlyResetLockManager;
+    private final BatchLockManager batchLockManager;
 
     @Override
     protected boolean releaseIfOwner(String lockKey, String lockOwner) {
-        return monthlyResetLockManager.releaseIfOwner(lockKey, lockOwner);
+        return batchLockManager.releaseIfOwner(lockKey, lockOwner);
     }
 
     @Override
@@ -26,11 +26,11 @@ public class MonthlyResetLockReleaseTasklet extends AbstractLockReleaseTasklet {
 
     @Override
     protected String lockKeyContextName() {
-        return MonthlyUsageResetJobConstants.JOB_CONTEXT_LOCK_KEY;
+        return BatchJobConstants.JOB_CONTEXT_LOCK_KEY;
     }
 
     @Override
     protected String lockOwnerContextName() {
-        return MonthlyUsageResetJobConstants.JOB_CONTEXT_LOCK_OWNER;
+        return BatchJobConstants.JOB_CONTEXT_LOCK_OWNER;
     }
 }

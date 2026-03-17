@@ -7,6 +7,7 @@ import java.time.temporal.TemporalAdjusters;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.common.support.TargetMonthParameterSupport;
 
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,7 @@ public class MonthlyUsagePrecreateJobParameterSupport {
         }
 
         return targetMonthParameterSupport.resolveTargetMonth(
-                targetMonth, MonthlyUsagePrecreateJobConstants.KST_ZONE_ID);
+                targetMonth, BatchJobConstants.KST_ZONE_ID);
     }
 
     public LocalDate defaultTargetMonth() {

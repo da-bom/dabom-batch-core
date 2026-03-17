@@ -22,7 +22,7 @@ import org.springframework.batch.support.transaction.ResourcelessTransactionMana
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.template.worker.global.retry.BatchRetrySupport;
+import com.template.worker.common.retry.BatchRetrySupport;
 import com.template.worker.jobs.reconciliation.reader.ReconciliationFamilyReader;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationProperties;
 import com.template.worker.jobs.reconciliation.writer.ReconciliationFamilyKeyInvalidationWriter;

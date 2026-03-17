@@ -9,6 +9,8 @@ import java.time.temporal.TemporalAdjusters;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+
 @Component
 public class WeekStartDateParameterSupport {
 
@@ -45,8 +47,7 @@ public class WeekStartDateParameterSupport {
 
     public LocalDate defaultWeekStartDate() {
         // 현재 주 월요일에서 1주를 빼 직전 주 시작일을 계산
-        LocalDate today =
-                ZonedDateTime.now(WeeklyFamilyRecapJobConstants.KST_ZONE_ID).toLocalDate();
+        LocalDate today = ZonedDateTime.now(BatchJobConstants.KST_ZONE_ID).toLocalDate();
         LocalDate thisWeekMonday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         return thisWeekMonday.minusWeeks(1);
     }

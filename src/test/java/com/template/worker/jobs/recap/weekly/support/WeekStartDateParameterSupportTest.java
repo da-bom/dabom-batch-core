@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+
 class WeekStartDateParameterSupportTest {
 
     private final WeekStartDateParameterSupport support = new WeekStartDateParameterSupport();
@@ -38,7 +40,7 @@ class WeekStartDateParameterSupportTest {
         LocalDate weekStartDate = support.resolveWeekStartDate(parameters);
 
         LocalDate expected =
-                ZonedDateTime.now(WeeklyFamilyRecapJobConstants.KST_ZONE_ID)
+                ZonedDateTime.now(BatchJobConstants.KST_ZONE_ID)
                         .toLocalDate()
                         .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                         .minusWeeks(1);

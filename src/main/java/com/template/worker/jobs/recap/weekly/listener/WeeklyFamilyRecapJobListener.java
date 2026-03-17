@@ -8,8 +8,9 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapJobConstants;
-import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapLockManager;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class WeeklyFamilyRecapJobListener implements JobExecutionListener {
 
-    private final WeeklyFamilyRecapLockManager lockManager;
+    private final BatchLockManager batchLockManager;
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
@@ -57,12 +58,10 @@ public class WeeklyFamilyRecapJobListener implements JobExecutionListener {
                 jobExecution.getStatus());
 
         // 예외 경로에서도 락 누수를 막기 위해 마지막에 한 번 더 정리
-        String lockKey =
-                jobContext.getString(WeeklyFamilyRecapJobConstants.JOB_CONTEXT_LOCK_KEY, null);
-        String lockOwner =
-                jobContext.getString(WeeklyFamilyRecapJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
+        String lockKey = jobContext.getString(BatchJobConstants.JOB_CONTEXT_LOCK_KEY, null);
+        String lockOwner = jobContext.getString(BatchJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
         try {
-            boolean released = lockManager.releaseIfOwner(lockKey, lockOwner);
+            boolean released = batchLockManager.releaseIfOwner(lockKey, lockOwner);
             if (lockKey != null) {
                 log.info(
                         "Weekly family recap final lock cleanup. lockKey={}, released={}",

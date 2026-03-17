@@ -6,8 +6,9 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.template.worker.global.listener.JobFailureAlertListener;
-import com.template.worker.global.listener.JobResultListener;
+import com.template.worker.common.listener.JobFailureAlertListener;
+import com.template.worker.common.listener.JobResultListener;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.usageprecreate.listener.MonthlyUsagePrecreateJobListener;
 import com.template.worker.jobs.usageprecreate.step.AcquireMonthlyUsagePrecreateLockStepConfig;
 import com.template.worker.jobs.usageprecreate.step.PrecreateCustomerQuotaStepConfig;
@@ -38,7 +39,7 @@ public class MonthlyUsagePrecreateJobConfig {
                 .listener(jobListener)
                 .start(acquireLockStepConfig.acquireMonthlyUsagePrecreateLockStep())
                 // 락 미획득이면 정상 종료해 중복 실행을 방지
-                .on(MonthlyUsagePrecreateJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
+                .on(BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
                 .end()
                 .from(acquireLockStepConfig.acquireMonthlyUsagePrecreateLockStep())
                 .on("FAILED")

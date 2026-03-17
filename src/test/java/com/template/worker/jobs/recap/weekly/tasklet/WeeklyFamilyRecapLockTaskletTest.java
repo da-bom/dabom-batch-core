@@ -23,19 +23,20 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
+import com.template.worker.jobs.common.support.TargetMonthLockKeyGenerator;
 import com.template.worker.jobs.recap.weekly.support.WeekStartDateParameterSupport;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapJobConstants;
-import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapLockKeyGenerator;
-import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapLockManager;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapProperties;
 
 @ExtendWith(MockitoExtension.class)
 class WeeklyFamilyRecapLockTaskletTest {
 
-    @Mock private WeeklyFamilyRecapLockManager lockManager;
+    @Mock private BatchLockManager batchLockManager;
     @Mock private WeekStartDateParameterSupport parameterSupport;
     @Mock private WeeklyFamilyRecapProperties properties;
-    @Mock private WeeklyFamilyRecapLockKeyGenerator lockKeyGenerator;
+    @Mock private TargetMonthLockKeyGenerator lockKeyGenerator;
 
     @InjectMocks private WeeklyFamilyRecapLockTasklet tasklet;
 
@@ -53,10 +54,11 @@ class WeeklyFamilyRecapLockTaskletTest {
         LocalDate weekStartDate = LocalDate.of(2026, 3, 2);
         when(parameterSupport.resolveWeekStartDate(any(JobParameters.class)))
                 .thenReturn(weekStartDate);
-        when(lockKeyGenerator.weeklyFamilyRecapLockKey(weekStartDate))
+        when(lockKeyGenerator.targetMonthLockKey(
+                        WeeklyFamilyRecapJobConstants.BATCH_LOCK_PREFIX, weekStartDate))
                 .thenReturn("batch:lock:weekly-family-recap:2026-03-02");
         when(properties.getLockTtl()).thenReturn(Duration.ofHours(1));
-        when(lockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))
+        when(batchLockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))
                 .thenReturn(false);
 
         tasklet.beforeStep(stepExecution);
@@ -67,7 +69,7 @@ class WeeklyFamilyRecapLockTaskletTest {
         tasklet.execute(contribution, chunkContext);
 
         assertThat(contribution.getExitStatus().getExitCode())
-                .isEqualTo(WeeklyFamilyRecapJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED);
+                .isEqualTo(BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED);
         assertThat(
                         jobExecution
                                 .getExecutionContext()

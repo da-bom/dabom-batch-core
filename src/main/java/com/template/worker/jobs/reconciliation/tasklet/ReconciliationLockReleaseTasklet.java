@@ -3,9 +3,10 @@ package com.template.worker.jobs.reconciliation.tasklet;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
 import com.template.worker.jobs.common.tasklet.AbstractLockReleaseTasklet;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationLockManager;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,11 +14,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReconciliationLockReleaseTasklet extends AbstractLockReleaseTasklet {
 
-    private final DbRedisReconciliationLockManager lockManager;
+    private final BatchLockManager batchLockManager;
 
     @Override
     protected boolean releaseIfOwner(String lockKey, String lockOwner) {
-        return lockManager.releaseIfOwner(lockKey, lockOwner);
+        return batchLockManager.releaseIfOwner(lockKey, lockOwner);
     }
 
     @Override
@@ -27,12 +28,12 @@ public class ReconciliationLockReleaseTasklet extends AbstractLockReleaseTasklet
 
     @Override
     protected String lockKeyContextName() {
-        return DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_KEY;
+        return BatchJobConstants.JOB_CONTEXT_LOCK_KEY;
     }
 
     @Override
     protected String lockOwnerContextName() {
-        return DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_OWNER;
+        return BatchJobConstants.JOB_CONTEXT_LOCK_OWNER;
     }
 
     @Override

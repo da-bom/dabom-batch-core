@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.common.launcher.BatchJobLauncher;
 import com.template.worker.jobs.usageoutbox.support.UsageEventOutboxJobConstants;
 
 import lombok.RequiredArgsConstructor;

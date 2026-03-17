@@ -6,7 +6,7 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.template.worker.global.listener.JobResultListener;
+import com.template.worker.common.listener.JobResultListener;
 import com.template.worker.jobs.usageoutbox.step.PublishUsageEventOutboxStepConfig;
 import com.template.worker.jobs.usageoutbox.support.UsageEventOutboxJobConstants;
 

@@ -1,12 +1,10 @@
 package com.template.worker.jobs.usagereset.support;
 
-import java.time.ZoneId;
 import java.util.List;
 
 public final class MonthlyUsageResetJobConstants {
 
-    public static final String KST_ZONE_ID_NAME = "Asia/Seoul";
-    public static final ZoneId KST_ZONE_ID = ZoneId.of(KST_ZONE_ID_NAME);
+    public static final String BATCH_LOCK_PREFIX = "batch:lock:monthly-usage-reset";
 
     public static final String JOB_NAME = "monthly-usage-reset-job";
     public static final String PARAM_TARGET_MONTH = "targetMonth";
@@ -17,12 +15,8 @@ public final class MonthlyUsageResetJobConstants {
             "reset-redis-customer-monthly-usage-step";
     public static final String STEP_RELEASE_MONTHLY_RESET_LOCK = "release-monthly-reset-lock-step";
 
-    public static final String EXIT_STATUS_LOCK_NOT_ACQUIRED = "LOCK_NOT_ACQUIRED";
-
     public static final String JOB_CONTEXT_TARGET_MONTH = "targetMonth";
     public static final String JOB_CONTEXT_TARGET_MONTH_DEFAULT = "default";
-    public static final String JOB_CONTEXT_LOCK_KEY = "lockKey";
-    public static final String JOB_CONTEXT_LOCK_OWNER = "lockOwner";
 
     public static final String STEP_CONTEXT_DELETED_FAMILY_KEY_COUNT =
             "deletedPreviousMonthFamilyKeyCount";

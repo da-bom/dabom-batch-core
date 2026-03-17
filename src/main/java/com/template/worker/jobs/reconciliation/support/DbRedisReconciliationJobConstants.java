@@ -1,11 +1,8 @@
 package com.template.worker.jobs.reconciliation.support;
 
-import java.time.ZoneId;
-
 public final class DbRedisReconciliationJobConstants {
 
-    public static final String KST_ZONE_ID_NAME = "Asia/Seoul";
-    public static final ZoneId KST_ZONE_ID = ZoneId.of(KST_ZONE_ID_NAME);
+    public static final String BATCH_LOCK_PREFIX = "batch:lock:reconciliation";
 
     public static final String JOB_NAME = "db-redis-reconciliation-job";
     public static final String PARAM_TARGET_MONTH = "targetMonth";
@@ -19,12 +16,8 @@ public final class DbRedisReconciliationJobConstants {
     public static final String STEP_RELEASE_RECONCILIATION_LOCK =
             "release-reconciliation-lock-step";
 
-    public static final String EXIT_STATUS_LOCK_NOT_ACQUIRED = "LOCK_NOT_ACQUIRED";
-
     public static final String JOB_CONTEXT_TARGET_MONTH = "targetMonth";
     public static final String JOB_CONTEXT_TARGET_MONTH_DEFAULT = "default";
-    public static final String JOB_CONTEXT_LOCK_KEY = "lockKey";
-    public static final String JOB_CONTEXT_LOCK_OWNER = "lockOwner";
     public static final String JOB_CONTEXT_LOCK_STATUS = "lockStatus";
     public static final String JOB_CONTEXT_LOCK_RELEASED = "lockReleased";
 

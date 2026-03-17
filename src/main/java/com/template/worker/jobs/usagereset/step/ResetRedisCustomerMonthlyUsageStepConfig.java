@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.template.worker.global.retry.BatchRetrySupport;
+import com.template.worker.common.retry.BatchRetrySupport;
 import com.template.worker.jobs.usagereset.model.FamilyMemberUsageResetTarget;
 import com.template.worker.jobs.usagereset.reader.ActiveFamilyMemberReader;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;

@@ -1,14 +1,14 @@
 package com.template.worker.jobs.usageprecreate.scheduler;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.global.alert.BatchAlertService;
-import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.common.alert.BatchAlertService;
+import com.template.worker.common.launcher.BatchJobLauncher;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobConstants;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobParameterSupport;
 
@@ -30,7 +30,7 @@ public class MonthlyUsagePrecreateScheduler {
 
     @Scheduled(
             cron = "${batch.schedules.monthly-usage-precreate.cron:0 30 23 28-31 * *}",
-            zone = MonthlyUsagePrecreateJobConstants.KST_ZONE_ID_NAME)
+            zone = BatchJobConstants.KST_ZONE_ID_NAME)
     public void runMonthlyUsagePrecreateJob() {
         // cron이 28~31일에 걸리므로 실제 월말 여부를 한 번 더 검증
         if (!parameterSupport.isLastDayOfMonth()) {
@@ -38,10 +38,10 @@ public class MonthlyUsagePrecreateScheduler {
             return;
         }
 
-        Map<String, String> params = new HashMap<>();
         // 월말 23:30에 다음 달 1일을 targetMonth로 전달
         String targetMonth = parameterSupport.defaultTargetMonth().toString();
-        params.put(MonthlyUsagePrecreateJobConstants.PARAM_TARGET_MONTH, targetMonth);
+        Map<String, String> params =
+                Map.of(MonthlyUsagePrecreateJobConstants.PARAM_TARGET_MONTH, targetMonth);
 
         try {
             launcher.run(MonthlyUsagePrecreateJobConstants.JOB_NAME, params);

@@ -1,14 +1,14 @@
 package com.template.worker.jobs.recap.monthly.scheduler;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.global.alert.BatchAlertService;
-import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.common.alert.BatchAlertService;
+import com.template.worker.common.launcher.BatchJobLauncher;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapJobConstants;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapJobParameterSupport;
 
@@ -30,12 +30,12 @@ public class MonthlyFamilyRecapScheduler {
 
     @Scheduled(
             cron = "${batch.schedules.monthly-family-recap.cron:0 20 0 1 * *}",
-            zone = MonthlyFamilyRecapJobConstants.KST_ZONE_ID_NAME)
+            zone = BatchJobConstants.KST_ZONE_ID_NAME)
     public void runMonthlyFamilyRecapJob() {
-        Map<String, String> params = new HashMap<>();
         // 스케줄 실행 시점 기준 직전 달 시작일을 기본 파라미터로 전달
         String targetMonth = parameterSupport.defaultTargetMonth().toString();
-        params.put(MonthlyFamilyRecapJobConstants.PARAM_TARGET_MONTH, targetMonth);
+        Map<String, String> params =
+                Map.of(MonthlyFamilyRecapJobConstants.PARAM_TARGET_MONTH, targetMonth);
 
         try {
             launcher.run(MonthlyFamilyRecapJobConstants.JOB_NAME, params);

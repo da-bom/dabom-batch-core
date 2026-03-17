@@ -1,15 +1,15 @@
 package com.template.worker.jobs.usagereset.scheduler;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.global.alert.BatchAlertService;
-import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.common.alert.BatchAlertService;
+import com.template.worker.common.launcher.BatchJobLauncher;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 
 import lombok.RequiredArgsConstructor;
@@ -29,16 +29,16 @@ public class MonthlyUsageResetScheduler {
 
     @Scheduled(
             cron = "${batch.schedules.monthly-usage-reset.cron:0 1 0 1 * *}",
-            zone = MonthlyUsageResetJobConstants.KST_ZONE_ID_NAME)
+            zone = BatchJobConstants.KST_ZONE_ID_NAME)
     public void runMonthlyUsageResetJob() {
-        Map<String, String> params = new HashMap<>();
         // 스케줄 실행 시점의 KST 월 시작일을 targetMonth로 전달
         String targetMonth =
-                ZonedDateTime.now(MonthlyUsageResetJobConstants.KST_ZONE_ID)
+                ZonedDateTime.now(BatchJobConstants.KST_ZONE_ID)
                         .toLocalDate()
                         .withDayOfMonth(1)
                         .toString();
-        params.put(MonthlyUsageResetJobConstants.PARAM_TARGET_MONTH, targetMonth);
+        Map<String, String> params =
+                Map.of(MonthlyUsageResetJobConstants.PARAM_TARGET_MONTH, targetMonth);
 
         try {
             launcher.run(MonthlyUsageResetJobConstants.JOB_NAME, params);

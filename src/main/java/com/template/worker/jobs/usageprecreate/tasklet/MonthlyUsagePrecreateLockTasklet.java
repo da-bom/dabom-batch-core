@@ -7,11 +7,12 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
+import com.template.worker.jobs.common.support.TargetMonthLockKeyGenerator;
 import com.template.worker.jobs.common.tasklet.AbstractTargetMonthLockTasklet;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobConstants;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateJobParameterSupport;
-import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateLockKeyGenerator;
-import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateLockManager;
 import com.template.worker.jobs.usageprecreate.support.MonthlyUsagePrecreateProperties;
 
 import lombok.RequiredArgsConstructor;
@@ -20,10 +21,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MonthlyUsagePrecreateLockTasklet extends AbstractTargetMonthLockTasklet {
 
-    private final MonthlyUsagePrecreateLockManager lockManager;
+    private final BatchLockManager batchLockManager;
     private final MonthlyUsagePrecreateJobParameterSupport parameterSupport;
     private final MonthlyUsagePrecreateProperties properties;
-    private final MonthlyUsagePrecreateLockKeyGenerator lockKeyGenerator;
+    private final TargetMonthLockKeyGenerator lockKeyGenerator;
 
     @Override
     protected LocalDate resolveTargetMonth(JobParameters jobParameters) {
@@ -32,12 +33,13 @@ public class MonthlyUsagePrecreateLockTasklet extends AbstractTargetMonthLockTas
 
     @Override
     protected String generateLockKey(LocalDate targetMonth) {
-        return lockKeyGenerator.monthlyUsagePrecreateLockKey(targetMonth);
+        return lockKeyGenerator.targetMonthLockKey(
+                MonthlyUsagePrecreateJobConstants.BATCH_LOCK_PREFIX, targetMonth);
     }
 
     @Override
     protected boolean tryAcquire(String lockKey, String lockOwner, Duration ttl) {
-        return lockManager.tryAcquire(lockKey, lockOwner, ttl);
+        return batchLockManager.tryAcquire(lockKey, lockOwner, ttl);
     }
 
     @Override
@@ -47,7 +49,7 @@ public class MonthlyUsagePrecreateLockTasklet extends AbstractTargetMonthLockTas
 
     @Override
     protected String lockNotAcquiredExitStatus() {
-        return MonthlyUsagePrecreateJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED;
+        return BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED;
     }
 
     @Override
@@ -60,7 +62,7 @@ public class MonthlyUsagePrecreateLockTasklet extends AbstractTargetMonthLockTas
             ExecutionContext jobContext, LocalDate targetMonth, String lockKey, String lockOwner) {
         jobContext.putString(
                 MonthlyUsagePrecreateJobConstants.JOB_CONTEXT_TARGET_MONTH, targetMonth.toString());
-        jobContext.putString(MonthlyUsagePrecreateJobConstants.JOB_CONTEXT_LOCK_KEY, lockKey);
-        jobContext.putString(MonthlyUsagePrecreateJobConstants.JOB_CONTEXT_LOCK_OWNER, lockOwner);
+        jobContext.putString(BatchJobConstants.JOB_CONTEXT_LOCK_KEY, lockKey);
+        jobContext.putString(BatchJobConstants.JOB_CONTEXT_LOCK_OWNER, lockOwner);
     }
 }

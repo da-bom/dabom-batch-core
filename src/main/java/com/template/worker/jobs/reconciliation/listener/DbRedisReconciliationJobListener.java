@@ -8,8 +8,9 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationLockManager;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DbRedisReconciliationJobListener implements JobExecutionListener {
 
-    private final DbRedisReconciliationLockManager lockManager;
+    private final BatchLockManager batchLockManager;
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
@@ -78,13 +79,10 @@ public class DbRedisReconciliationJobListener implements JobExecutionListener {
                 jobExecution.getId());
 
         // 예외 경로 누수 방지를 위해 최종 락 정리를 한 번 더 수행함
-        String lockKey =
-                jobContext.getString(DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_KEY, null);
-        String lockOwner =
-                jobContext.getString(
-                        DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
+        String lockKey = jobContext.getString(BatchJobConstants.JOB_CONTEXT_LOCK_KEY, null);
+        String lockOwner = jobContext.getString(BatchJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
         try {
-            boolean released = lockManager.releaseIfOwner(lockKey, lockOwner);
+            boolean released = batchLockManager.releaseIfOwner(lockKey, lockOwner);
             if (released) {
                 jobContext.putString(
                         DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_RELEASED,
