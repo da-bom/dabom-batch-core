@@ -7,11 +7,12 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
+import com.template.worker.jobs.common.support.TargetMonthLockKeyGenerator;
 import com.template.worker.jobs.common.tasklet.AbstractTargetMonthLockTasklet;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobParameterSupport;
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationLockKeyGenerator;
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationLockManager;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationProperties;
 
 import lombok.RequiredArgsConstructor;
@@ -20,10 +21,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReconciliationLockTasklet extends AbstractTargetMonthLockTasklet {
 
-    private final DbRedisReconciliationLockManager lockManager;
+    private final BatchLockManager batchLockManager;
     private final DbRedisReconciliationJobParameterSupport parameterSupport;
     private final DbRedisReconciliationProperties properties;
-    private final DbRedisReconciliationLockKeyGenerator lockKeyGenerator;
+    private final TargetMonthLockKeyGenerator lockKeyGenerator;
 
     @Override
     protected LocalDate resolveTargetMonth(JobParameters jobParameters) {
@@ -32,12 +33,13 @@ public class ReconciliationLockTasklet extends AbstractTargetMonthLockTasklet {
 
     @Override
     protected String generateLockKey(LocalDate targetMonth) {
-        return lockKeyGenerator.reconciliationLockKey(targetMonth);
+        return lockKeyGenerator.targetMonthLockKey(
+                DbRedisReconciliationJobConstants.BATCH_LOCK_PREFIX, targetMonth);
     }
 
     @Override
     protected boolean tryAcquire(String lockKey, String lockOwner, Duration ttl) {
-        return lockManager.tryAcquire(lockKey, lockOwner, ttl);
+        return batchLockManager.tryAcquire(lockKey, lockOwner, ttl);
     }
 
     @Override
@@ -47,7 +49,7 @@ public class ReconciliationLockTasklet extends AbstractTargetMonthLockTasklet {
 
     @Override
     protected String lockNotAcquiredExitStatus() {
-        return DbRedisReconciliationJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED;
+        return BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED;
     }
 
     @Override
@@ -60,8 +62,8 @@ public class ReconciliationLockTasklet extends AbstractTargetMonthLockTasklet {
             ExecutionContext jobContext, LocalDate targetMonth, String lockKey, String lockOwner) {
         jobContext.putString(
                 DbRedisReconciliationJobConstants.JOB_CONTEXT_TARGET_MONTH, targetMonth.toString());
-        jobContext.putString(DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_KEY, lockKey);
-        jobContext.putString(DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_OWNER, lockOwner);
+        jobContext.putString(BatchJobConstants.JOB_CONTEXT_LOCK_KEY, lockKey);
+        jobContext.putString(BatchJobConstants.JOB_CONTEXT_LOCK_OWNER, lockOwner);
         jobContext.putString(
                 DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_STATUS,
                 DbRedisReconciliationJobConstants.LOCK_STATUS_NOT_ACQUIRED);
