@@ -19,15 +19,27 @@ public class RedisKeyGenerator {
     private static final DateTimeFormatter MONTH_SUFFIX_FORMATTER =
             DateTimeFormatter.ofPattern("yyyyMM");
 
-    public String familyRemainingKey(Long familyId) {
-        return FAMILY_PREFIX + KEY_SEPARATOR + familyId + KEY_SEPARATOR + REMAINING_KEY;
+    public String familyRemainingKey(Long familyId, LocalDate targetMonth) {
+        return FAMILY_PREFIX
+                + KEY_SEPARATOR
+                + familyId
+                + KEY_SEPARATOR
+                + REMAINING_KEY
+                + KEY_SEPARATOR
+                + targetMonth.format(MONTH_SUFFIX_FORMATTER);
     }
 
-    public String familyInfoKey(Long familyId) {
-        return FAMILY_PREFIX + KEY_SEPARATOR + familyId + KEY_SEPARATOR + INFO_KEY;
+    public String familyInfoKey(Long familyId, LocalDate targetMonth) {
+        return FAMILY_PREFIX
+                + KEY_SEPARATOR
+                + familyId
+                + KEY_SEPARATOR
+                + INFO_KEY
+                + KEY_SEPARATOR
+                + targetMonth.format(MONTH_SUFFIX_FORMATTER);
     }
 
-    public String familyAlertThresholdKey(Long familyId, int threshold) {
+    public String familyAlertThresholdKey(Long familyId, int threshold, LocalDate targetMonth) {
         return FAMILY_PREFIX
                 + KEY_SEPARATOR
                 + familyId
@@ -36,10 +48,12 @@ public class RedisKeyGenerator {
                 + KEY_SEPARATOR
                 + THRESHOLD_KEY
                 + KEY_SEPARATOR
-                + threshold;
+                + threshold
+                + KEY_SEPARATOR
+                + targetMonth.format(MONTH_SUFFIX_FORMATTER);
     }
 
-    public String customerMonthlyUsageKey(Long familyId, Long customerId) {
+    private String customerMonthlyUsageKey(Long familyId, Long customerId) {
         return FAMILY_PREFIX
                 + KEY_SEPARATOR
                 + familyId
