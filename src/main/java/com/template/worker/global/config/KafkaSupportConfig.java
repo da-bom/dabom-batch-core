@@ -3,9 +3,9 @@ package com.template.worker.global.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dabom.messaging.kafka.event.KafkaEventMessageSupport;
 import com.dabom.messaging.kafka.support.KafkaLogSanitizer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 public class KafkaSupportConfig {
