@@ -1,4 +1,4 @@
-package com.template.worker.global.listener;
+package com.template.worker.common.listener;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -20,8 +20,8 @@ import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 
-import com.template.worker.global.alert.BatchAlertService;
-import com.template.worker.global.retry.BatchRetrySupport;
+import com.template.worker.common.alert.BatchAlertService;
+import com.template.worker.common.retry.BatchRetrySupport;
 
 import io.lettuce.core.RedisCommandTimeoutException;
 

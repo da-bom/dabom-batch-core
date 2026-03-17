@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.template.worker.global.retry.BatchRetrySupport;
+import com.template.worker.common.retry.BatchRetrySupport;
 import com.template.worker.jobs.reconciliation.model.FamilyMemberReconciliationTarget;
 import com.template.worker.jobs.reconciliation.reader.ReconciliationFamilyMemberReader;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;

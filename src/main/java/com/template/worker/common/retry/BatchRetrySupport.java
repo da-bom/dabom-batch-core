@@ -1,4 +1,4 @@
-package com.template.worker.global.retry;
+package com.template.worker.common.retry;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

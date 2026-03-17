@@ -13,7 +13,7 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.global.util.RedisKeyGenerator;
+import com.template.worker.common.util.RedisKeyGenerator;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobParameterSupport;
 

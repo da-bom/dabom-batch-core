@@ -1,4 +1,4 @@
-package com.template.worker.global.alert;
+package com.template.worker.common.alert;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.hamcrest.Matchers.containsString;

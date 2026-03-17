@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.template.worker.api.dto.RunBatchRequest;
-import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.common.launcher.BatchJobLauncher;
 
 @ExtendWith(MockitoExtension.class)
 class BatchAdminServiceTest {

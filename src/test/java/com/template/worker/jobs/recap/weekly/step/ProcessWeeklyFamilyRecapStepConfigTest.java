@@ -24,7 +24,7 @@ import org.springframework.batch.support.transaction.ResourcelessTransactionMana
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.template.worker.global.retry.BatchRetrySupport;
+import com.template.worker.common.retry.BatchRetrySupport;
 import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapRow;
 import com.template.worker.jobs.recap.weekly.processor.WeeklyFamilyRecapProcessor;
 import com.template.worker.jobs.recap.weekly.reader.WeeklyFamilyRecapFamilyReader;

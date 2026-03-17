@@ -3,7 +3,7 @@ package com.template.worker.api.service;
 import org.springframework.stereotype.Service;
 
 import com.template.worker.api.dto.RunBatchRequest;
-import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.common.launcher.BatchJobLauncher;
 
 import lombok.RequiredArgsConstructor;
 

@@ -6,8 +6,8 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.template.worker.global.listener.JobFailureAlertListener;
-import com.template.worker.global.listener.JobResultListener;
+import com.template.worker.common.listener.JobFailureAlertListener;
+import com.template.worker.common.listener.JobResultListener;
 import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.usagereset.listener.MonthlyUsageResetJobListener;
 import com.template.worker.jobs.usagereset.step.AcquireMonthlyResetLockStepConfig;

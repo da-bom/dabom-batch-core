@@ -1,4 +1,4 @@
-package com.template.worker.global.alert;
+package com.template.worker.common.alert;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

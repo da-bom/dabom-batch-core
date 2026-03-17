@@ -7,8 +7,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.global.alert.BatchAlertService;
-import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.common.alert.BatchAlertService;
+import com.template.worker.common.launcher.BatchJobLauncher;
 import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
 

@@ -1,4 +1,4 @@
-package com.template.worker.global.listener;
+package com.template.worker.common.listener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +13,8 @@ import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import com.template.worker.global.alert.BatchAlertService;
-import com.template.worker.global.retry.BatchRetrySupport;
+import com.template.worker.common.alert.BatchAlertService;
+import com.template.worker.common.retry.BatchRetrySupport;
 
 import io.lettuce.core.RedisCommandTimeoutException;
 

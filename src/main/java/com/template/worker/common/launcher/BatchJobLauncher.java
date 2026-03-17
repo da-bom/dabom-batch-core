@@ -1,4 +1,4 @@
-package com.template.worker.global.launcher;
+package com.template.worker.common.launcher;
 
 import java.util.Collections;
 import java.util.Map;

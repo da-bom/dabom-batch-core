@@ -1,4 +1,4 @@
-package com.template.worker.global.listener;
+package com.template.worker.common.listener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

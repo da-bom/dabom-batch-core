@@ -1,4 +1,4 @@
-package com.template.worker.global.config;
+package com.template.worker.common.config;
 
 import java.time.Clock;
 import java.time.ZoneId;

@@ -1,4 +1,4 @@
-package com.template.worker.global.util;
+package com.template.worker.common.util;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

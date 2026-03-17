@@ -1,4 +1,4 @@
-package com.template.worker.global.retry;
+package com.template.worker.common.retry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

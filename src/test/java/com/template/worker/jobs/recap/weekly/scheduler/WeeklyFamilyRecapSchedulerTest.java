@@ -14,8 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.template.worker.global.alert.BatchAlertService;
-import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.common.alert.BatchAlertService;
+import com.template.worker.common.launcher.BatchJobLauncher;
 import com.template.worker.jobs.recap.weekly.support.WeekStartDateParameterSupport;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapJobConstants;
 
