@@ -100,28 +100,29 @@ public class JobFailureAlertListener implements JobExecutionListener {
         return current;
     }
 
+    // 예외 체인과 메시지를 분석해 재시도 여부와 원인 유형을 판단해 알람 요약을 만듦
     private String buildSummary(Throwable exception, Throwable rootCause) {
         // 같은 QueryTimeoutException이라도 DB/Redis 의미가 다를 수 있어 순서 분리
         boolean retryExhausted = containsRetryExhaustedSignal(exception);
 
-        if (rootCause instanceof RedisConnectionFailureException) {
+        if (containsInChain(exception, RedisConnectionFailureException.class)) {
             return retryExhausted
                     ? String.format(
                             "Redis 연결 실패로 재시도 %d회 후 최종 실패", batchRetrySupport.getRetryLimit())
                     : "Redis 연결 실패";
         }
-        if (isRedisTimeout(rootCause)) {
+        if (isRedisTimeout(exception)) {
             return retryExhausted
                     ? String.format(
                             "Redis 명령 타임아웃으로 재시도 %d회 후 최종 실패", batchRetrySupport.getRetryLimit())
                     : "Redis 명령 타임아웃";
         }
-        if (rootCause instanceof PessimisticLockingFailureException) {
+        if (containsInChain(exception, PessimisticLockingFailureException.class)) {
             return retryExhausted
                     ? String.format("DB 데드락으로 재시도 %d회 후 최종 실패", batchRetrySupport.getRetryLimit())
                     : "DB 데드락 발생";
         }
-        if (rootCause instanceof QueryTimeoutException) {
+        if (containsInChain(exception, QueryTimeoutException.class)) {
             return retryExhausted
                     ? String.format(
                             "DB 쿼리 타임아웃으로 재시도 %d회 후 최종 실패", batchRetrySupport.getRetryLimit())
@@ -134,6 +135,18 @@ public class JobFailureAlertListener implements JobExecutionListener {
             return rootCause.getMessage();
         }
         return UNKNOWN_ERROR_SUMMARY;
+    }
+
+    // 예외 체인에 특정 타입이 있는지 확인하는 유틸리티 메서드
+    private boolean containsInChain(Throwable exception, Class<? extends Throwable> type) {
+        Throwable current = exception;
+        while (current != null) {
+            if (type.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private boolean isRedisTimeout(Throwable exception) {
