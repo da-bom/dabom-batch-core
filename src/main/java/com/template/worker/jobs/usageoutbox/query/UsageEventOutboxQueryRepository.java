@@ -158,10 +158,14 @@ public class UsageEventOutboxQueryRepository {
         return timestamp == null ? null : timestamp.toLocalDateTime();
     }
 
+    private static final int MAX_ERROR_MESSAGE_LENGTH = 1000;
+
     private static String truncate(String message) {
         if (message == null) {
             return null;
         }
-        return message.length() <= 1000 ? message : message.substring(0, 1000);
+        return message.length() <= MAX_ERROR_MESSAGE_LENGTH
+                ? message
+                : message.substring(0, MAX_ERROR_MESSAGE_LENGTH);
     }
 }
