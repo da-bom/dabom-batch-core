@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.common.support.TargetMonthParameterSupport;
 
 class DbRedisReconciliationJobParameterSupportTest {
@@ -37,9 +38,7 @@ class DbRedisReconciliationJobParameterSupportTest {
         LocalDate targetMonth = support.resolveTargetMonth(parameters);
 
         LocalDate expected =
-                ZonedDateTime.now(DbRedisReconciliationJobConstants.KST_ZONE_ID)
-                        .toLocalDate()
-                        .withDayOfMonth(1);
+                ZonedDateTime.now(BatchJobConstants.KST_ZONE_ID).toLocalDate().withDayOfMonth(1);
         assertThat(targetMonth).isEqualTo(expected);
     }
 

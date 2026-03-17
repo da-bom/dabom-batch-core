@@ -15,12 +15,12 @@ import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.dao.QueryTimeoutException;
 
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationLockManager;
+import com.template.worker.jobs.common.support.BatchLockManager;
 
 @ExtendWith(MockitoExtension.class)
 class DbRedisReconciliationJobListenerTest {
 
-    @Mock private DbRedisReconciliationLockManager lockManager;
+    @Mock private BatchLockManager batchLockManager;
 
     @InjectMocks private DbRedisReconciliationJobListener jobListener;
 
@@ -41,7 +41,7 @@ class DbRedisReconciliationJobListenerTest {
         jobExecution.getExecutionContext().putString("lockOwner", "owner");
 
         doThrow(new QueryTimeoutException("Redis command timed out"))
-                .when(lockManager)
+                .when(batchLockManager)
                 .releaseIfOwner("batch:lock:reconciliation:2026-03-01", "owner");
 
         assertThatCode(() -> jobListener.afterJob(jobExecution)).doesNotThrowAnyException();

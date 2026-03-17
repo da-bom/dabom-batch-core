@@ -23,19 +23,20 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
+import com.template.worker.jobs.common.support.TargetMonthLockKeyGenerator;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapJobConstants;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapJobParameterSupport;
-import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapLockKeyGenerator;
-import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapLockManager;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapProperties;
 
 @ExtendWith(MockitoExtension.class)
 class MonthlyFamilyRecapLockTaskletTest {
 
-    @Mock private MonthlyFamilyRecapLockManager lockManager;
+    @Mock private BatchLockManager batchLockManager;
     @Mock private MonthlyFamilyRecapJobParameterSupport parameterSupport;
     @Mock private MonthlyFamilyRecapProperties properties;
-    @Mock private MonthlyFamilyRecapLockKeyGenerator lockKeyGenerator;
+    @Mock private TargetMonthLockKeyGenerator lockKeyGenerator;
 
     @InjectMocks private MonthlyFamilyRecapLockTasklet tasklet;
 
@@ -50,10 +51,11 @@ class MonthlyFamilyRecapLockTaskletTest {
 
         LocalDate targetMonth = LocalDate.of(2026, 3, 1);
         when(parameterSupport.resolveTargetMonth(any(JobParameters.class))).thenReturn(targetMonth);
-        when(lockKeyGenerator.monthlyFamilyRecapLockKey(targetMonth))
+        when(lockKeyGenerator.targetMonthLockKey(
+                        MonthlyFamilyRecapJobConstants.BATCH_LOCK_PREFIX, targetMonth))
                 .thenReturn("batch:lock:monthly-family-recap:2026-03-01");
         when(properties.getLockTtl()).thenReturn(Duration.ofHours(1));
-        when(lockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))
+        when(batchLockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))
                 .thenReturn(false);
 
         tasklet.beforeStep(stepExecution);
@@ -64,7 +66,7 @@ class MonthlyFamilyRecapLockTaskletTest {
         tasklet.execute(contribution, chunkContext);
 
         assertThat(contribution.getExitStatus().getExitCode())
-                .isEqualTo(MonthlyFamilyRecapJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED);
+                .isEqualTo(BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED);
         assertThat(
                         jobExecution
                                 .getExecutionContext()

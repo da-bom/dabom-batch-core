@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.common.support.TargetMonthParameterSupport;
 
 class MonthlyFamilyRecapJobParameterSupportTest {
@@ -37,7 +38,7 @@ class MonthlyFamilyRecapJobParameterSupportTest {
         LocalDate targetMonth = support.resolveTargetMonth(parameters);
 
         LocalDate expected =
-                ZonedDateTime.now(MonthlyFamilyRecapJobConstants.KST_ZONE_ID)
+                ZonedDateTime.now(BatchJobConstants.KST_ZONE_ID)
                         .toLocalDate()
                         .withDayOfMonth(1)
                         .minusMonths(1);

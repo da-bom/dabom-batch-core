@@ -23,19 +23,20 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
 
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
+import com.template.worker.jobs.common.support.TargetMonthLockKeyGenerator;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobParameterSupport;
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationLockKeyGenerator;
-import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationLockManager;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationProperties;
 
 @ExtendWith(MockitoExtension.class)
 class ReconciliationLockTaskletTest {
 
-    @Mock private DbRedisReconciliationLockManager lockManager;
+    @Mock private BatchLockManager batchLockManager;
     @Mock private DbRedisReconciliationJobParameterSupport parameterSupport;
     @Mock private DbRedisReconciliationProperties properties;
-    @Mock private DbRedisReconciliationLockKeyGenerator lockKeyGenerator;
+    @Mock private TargetMonthLockKeyGenerator lockKeyGenerator;
 
     @InjectMocks private ReconciliationLockTasklet tasklet;
 
@@ -50,10 +51,11 @@ class ReconciliationLockTaskletTest {
 
         LocalDate targetMonth = LocalDate.of(2026, 3, 1);
         when(parameterSupport.resolveTargetMonth(any(JobParameters.class))).thenReturn(targetMonth);
-        when(lockKeyGenerator.reconciliationLockKey(targetMonth))
+        when(lockKeyGenerator.targetMonthLockKey(
+                        DbRedisReconciliationJobConstants.BATCH_LOCK_PREFIX, targetMonth))
                 .thenReturn("batch:lock:reconciliation:2026-03-01");
         when(properties.getLockTtl()).thenReturn(Duration.ofHours(1));
-        when(lockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))
+        when(batchLockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))
                 .thenReturn(false);
 
         tasklet.beforeStep(stepExecution);
@@ -64,7 +66,7 @@ class ReconciliationLockTaskletTest {
         tasklet.execute(contribution, chunkContext);
 
         assertThat(contribution.getExitStatus().getExitCode())
-                .isEqualTo(DbRedisReconciliationJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED);
+                .isEqualTo(BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED);
         assertThat(
                         jobExecution
                                 .getExecutionContext()
@@ -90,10 +92,11 @@ class ReconciliationLockTaskletTest {
 
         LocalDate targetMonth = LocalDate.of(2026, 3, 1);
         when(parameterSupport.resolveTargetMonth(any(JobParameters.class))).thenReturn(targetMonth);
-        when(lockKeyGenerator.reconciliationLockKey(targetMonth))
+        when(lockKeyGenerator.targetMonthLockKey(
+                        DbRedisReconciliationJobConstants.BATCH_LOCK_PREFIX, targetMonth))
                 .thenReturn("batch:lock:reconciliation:2026-03-01");
         when(properties.getLockTtl()).thenReturn(Duration.ofHours(1));
-        when(lockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))
+        when(batchLockManager.tryAcquire(anyString(), anyString(), any(Duration.class)))
                 .thenReturn(true);
 
         tasklet.beforeStep(stepExecution);
@@ -110,6 +113,6 @@ class ReconciliationLockTaskletTest {
                                         DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_STATUS))
                 .isEqualTo(DbRedisReconciliationJobConstants.LOCK_STATUS_ACQUIRED);
         assertThat(contribution.getExitStatus().getExitCode())
-                .isNotEqualTo(DbRedisReconciliationJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED);
+                .isNotEqualTo(BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED);
     }
 }
