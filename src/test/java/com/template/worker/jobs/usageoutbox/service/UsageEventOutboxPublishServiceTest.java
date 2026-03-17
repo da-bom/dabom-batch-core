@@ -71,7 +71,7 @@ class UsageEventOutboxPublishServiceTest {
 
     @Test
     @DisplayName("publishPendingOutboxes - 발행 성공 시 SENT로 갱신한다")
-    void publishPendingOutboxes_marksSentOnSuccess() throws Exception {
+    void publishPendingOutboxes_marksSentOnSuccess() {
         UsageEventOutboxRow row = new UsageEventOutboxRow(1L, "evt_1", "{\"familyId\":10}", 0);
         NotificationPayload notificationPayload =
                 new NotificationPayload(
@@ -96,7 +96,7 @@ class UsageEventOutboxPublishServiceTest {
 
     @Test
     @DisplayName("publishPendingOutboxes - retryable 실패면 PUBLISH_PENDING과 next_retry_at을 갱신한다")
-    void publishPendingOutboxes_marksPendingForRetryOnRetryableError() throws Exception {
+    void publishPendingOutboxes_marksPendingForRetryOnRetryableError() {
         UsageEventOutboxRow row = new UsageEventOutboxRow(1L, "evt_1", "{\"familyId\":10}", 0);
         NotificationPayload notificationPayload =
                 new NotificationPayload(
@@ -126,7 +126,7 @@ class UsageEventOutboxPublishServiceTest {
 
     @Test
     @DisplayName("publishPendingOutboxes - non-retryable 실패면 FAILED로 갱신한다")
-    void publishPendingOutboxes_marksFailedOnNonRetryableError() throws Exception {
+    void publishPendingOutboxes_marksFailedOnNonRetryableError() {
         UsageEventOutboxRow row = new UsageEventOutboxRow(1L, "evt_1", "{\"familyId\":10}", 0);
 
         when(repository.pollPublishableRows(anyInt(), anyInt(), any())).thenReturn(List.of(row));
