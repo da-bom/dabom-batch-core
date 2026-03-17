@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.dabom.messaging.kafka.error.NonRetryableKafkaMessageProcessingException;
 import com.dabom.messaging.kafka.event.dto.notification.NotificationPayload;
 import com.dabom.messaging.kafka.event.dto.notification.NotificationType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +18,7 @@ class UsageEventOutboxPayloadMapperTest {
 
     @Test
     @DisplayName("readPayload - NotificationPayload JSON을 역직렬화한다")
-    void readPayload_parsesValidPayload() throws Exception {
+    void readPayload_parsesValidPayload() {
         String json =
                 """
                 {
@@ -57,7 +58,7 @@ class UsageEventOutboxPayloadMapperTest {
                 """;
 
         assertThatThrownBy(() -> mapper.readPayload(json))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(NonRetryableKafkaMessageProcessingException.class)
                 .hasMessageContaining("title");
     }
 }

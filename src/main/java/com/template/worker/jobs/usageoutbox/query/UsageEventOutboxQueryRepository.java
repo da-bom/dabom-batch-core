@@ -141,7 +141,8 @@ public class UsageEventOutboxQueryRepository {
     }
 
     public int countByStatus(UsageEventOutboxStatus status) {
-        MapSqlParameterSource params = new MapSqlParameterSource().addValue(PARAM_STATUS, status.name());
+        MapSqlParameterSource params =
+                new MapSqlParameterSource().addValue(PARAM_STATUS, status.name());
         Integer count =
                 jdbcTemplate.queryForObject(
                         """

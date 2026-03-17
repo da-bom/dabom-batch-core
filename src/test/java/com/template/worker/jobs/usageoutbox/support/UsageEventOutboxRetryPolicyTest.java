@@ -13,6 +13,8 @@ import org.apache.kafka.common.errors.NetworkException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.dabom.messaging.kafka.error.KafkaMessageProcessingException;
+import com.dabom.messaging.kafka.error.NonRetryableKafkaMessageProcessingException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 class UsageEventOutboxRetryPolicyTest {
@@ -44,9 +46,18 @@ class UsageEventOutboxRetryPolicyTest {
 
         assertThat(retryPolicy.isRetryable(new IllegalArgumentException("bad payload"))).isFalse();
         assertThat(retryPolicy.isRetryable(new JsonProcessingException("bad json") {})).isFalse();
+        assertThat(
+                        retryPolicy.isRetryable(
+                                new NonRetryableKafkaMessageProcessingException("bad event")))
+                .isFalse();
         assertThat(retryPolicy.isRetryable(new TimeoutException("timeout"))).isTrue();
         assertThat(retryPolicy.isRetryable(new NetworkException("network"))).isTrue();
         assertThat(retryPolicy.isRetryable(new KafkaException("kafka"))).isTrue();
+        assertThat(
+                        retryPolicy.isRetryable(
+                                new KafkaMessageProcessingException(
+                                        "publish failed", new TimeoutException("timeout"))))
+                .isTrue();
         assertThat(retryPolicy.isRetryable(new ExecutionException(new TimeoutException("timeout"))))
                 .isTrue();
         assertThat(

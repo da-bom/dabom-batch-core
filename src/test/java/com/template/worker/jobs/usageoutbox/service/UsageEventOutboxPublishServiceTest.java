@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.dabom.messaging.kafka.error.KafkaMessageProcessingException;
 import com.dabom.messaging.kafka.event.dto.notification.NotificationPayload;
 import com.dabom.messaging.kafka.event.dto.notification.NotificationType;
 import com.template.worker.jobs.usageoutbox.model.UsageEventOutboxRow;
@@ -109,7 +109,12 @@ class UsageEventOutboxPublishServiceTest {
 
         when(repository.pollPublishableRows(anyInt(), anyInt(), any())).thenReturn(List.of(row));
         when(payloadMapper.readPayload(any())).thenReturn(notificationPayload);
-        doThrow(new TimeoutException("timeout")).when(notificationPublisher).publish(any(), any());
+        doThrow(
+                        new KafkaMessageProcessingException(
+                                "publish failed",
+                                new java.util.concurrent.TimeoutException("timeout")))
+                .when(notificationPublisher)
+                .publish(any(), any());
 
         service.publishPendingOutboxes();
 
