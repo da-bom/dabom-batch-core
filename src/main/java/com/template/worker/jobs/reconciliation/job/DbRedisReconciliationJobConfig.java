@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.template.worker.global.listener.JobFailureAlertListener;
 import com.template.worker.global.listener.JobResultListener;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.reconciliation.listener.DbRedisReconciliationJobListener;
 import com.template.worker.jobs.reconciliation.step.AcquireReconciliationLockStepConfig;
 import com.template.worker.jobs.reconciliation.step.InvalidateCustomerMonthlyUsageStepConfig;
@@ -39,7 +40,7 @@ public class DbRedisReconciliationJobConfig {
                 .listener(dbRedisReconciliationJobListener)
                 .start(acquireReconciliationLockStepConfig.acquireReconciliationLockStep())
                 // 락 미획득이면 정상 종료해 중복 실행을 방지함
-                .on(DbRedisReconciliationJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
+                .on(BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
                 .end()
                 .from(acquireReconciliationLockStepConfig.acquireReconciliationLockStep())
                 .on("FAILED")

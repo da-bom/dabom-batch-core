@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.template.worker.global.listener.JobFailureAlertListener;
 import com.template.worker.global.listener.JobResultListener;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.recap.weekly.listener.WeeklyFamilyRecapJobListener;
 import com.template.worker.jobs.recap.weekly.step.AcquireWeeklyFamilyRecapLockStepConfig;
 import com.template.worker.jobs.recap.weekly.step.ProcessWeeklyFamilyRecapStepConfig;
@@ -36,7 +37,7 @@ public class WeeklyFamilyRecapJobConfig {
                 .listener(jobFailureAlertListener)
                 .listener(weeklyFamilyRecapJobListener)
                 .start(acquireWeeklyFamilyRecapLockStepConfig.acquireWeeklyFamilyRecapLockStep())
-                .on(WeeklyFamilyRecapJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
+                .on(BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
                 .end()
                 .from(acquireWeeklyFamilyRecapLockStepConfig.acquireWeeklyFamilyRecapLockStep())
                 .on("FAILED")

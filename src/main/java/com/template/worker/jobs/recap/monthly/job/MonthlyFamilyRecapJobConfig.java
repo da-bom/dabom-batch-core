@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.template.worker.global.listener.JobFailureAlertListener;
 import com.template.worker.global.listener.JobResultListener;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.recap.monthly.listener.MonthlyFamilyRecapJobListener;
 import com.template.worker.jobs.recap.monthly.step.AcquireMonthlyFamilyRecapLockStepConfig;
 import com.template.worker.jobs.recap.monthly.step.ProcessMonthlyFamilyRecapStepConfig;
@@ -36,7 +37,7 @@ public class MonthlyFamilyRecapJobConfig {
                 .listener(jobFailureAlertListener)
                 .listener(monthlyFamilyRecapJobListener)
                 .start(acquireMonthlyFamilyRecapLockStepConfig.acquireMonthlyFamilyRecapLockStep())
-                .on(MonthlyFamilyRecapJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
+                .on(BatchJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)
                 .end()
                 .from(acquireMonthlyFamilyRecapLockStepConfig.acquireMonthlyFamilyRecapLockStep())
                 // 락 스텝 실패는 잡 실패로 명확히 전파
