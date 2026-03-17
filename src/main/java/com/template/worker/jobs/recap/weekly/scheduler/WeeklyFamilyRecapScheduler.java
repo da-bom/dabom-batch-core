@@ -1,6 +1,5 @@
 package com.template.worker.jobs.recap.weekly.scheduler;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.template.worker.global.alert.BatchAlertService;
 import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.recap.weekly.support.WeekStartDateParameterSupport;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapJobConstants;
 
@@ -30,12 +30,12 @@ public class WeeklyFamilyRecapScheduler {
 
     @Scheduled(
             cron = "${batch.schedules.weekly-family-recap.cron:0 10 0 * * MON}",
-            zone = WeeklyFamilyRecapJobConstants.KST_ZONE_ID_NAME)
+            zone = BatchJobConstants.KST_ZONE_ID_NAME)
     public void runWeeklyFamilyRecapJob() {
-        Map<String, String> params = new HashMap<>();
         // 스케줄 실행 시점 기준 직전 주 월요일을 기본 파라미터로 전달
         String weekStartDate = parameterSupport.defaultWeekStartDate().toString();
-        params.put(WeeklyFamilyRecapJobConstants.PARAM_WEEK_START_DATE, weekStartDate);
+        Map<String, String> params =
+                Map.of(WeeklyFamilyRecapJobConstants.PARAM_WEEK_START_DATE, weekStartDate);
 
         try {
             launcher.run(WeeklyFamilyRecapJobConstants.JOB_NAME, params);

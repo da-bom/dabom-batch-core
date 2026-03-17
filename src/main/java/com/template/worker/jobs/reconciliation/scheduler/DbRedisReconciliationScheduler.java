@@ -1,7 +1,6 @@
 package com.template.worker.jobs.reconciliation.scheduler;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -10,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.template.worker.global.alert.BatchAlertService;
 import com.template.worker.global.launcher.BatchJobLauncher;
+import com.template.worker.jobs.common.support.BatchJobConstants;
 import com.template.worker.jobs.reconciliation.support.DbRedisReconciliationJobConstants;
 
 import lombok.RequiredArgsConstructor;
@@ -29,16 +29,16 @@ public class DbRedisReconciliationScheduler {
 
     @Scheduled(
             cron = "${batch.schedules.db-redis-reconciliation.cron:0 0 3 * * *}",
-            zone = DbRedisReconciliationJobConstants.KST_ZONE_ID_NAME)
+            zone = BatchJobConstants.KST_ZONE_ID_NAME)
     public void runDbRedisReconciliationJob() {
-        Map<String, String> params = new HashMap<>();
         // 스케줄 실행 시점의 KST 월 시작일을 targetMonth로 전달
         String targetMonth =
-                ZonedDateTime.now(DbRedisReconciliationJobConstants.KST_ZONE_ID)
+                ZonedDateTime.now(BatchJobConstants.KST_ZONE_ID)
                         .toLocalDate()
                         .withDayOfMonth(1)
                         .toString();
-        params.put(DbRedisReconciliationJobConstants.PARAM_TARGET_MONTH, targetMonth);
+        Map<String, String> params =
+                Map.of(DbRedisReconciliationJobConstants.PARAM_TARGET_MONTH, targetMonth);
 
         try {
             launcher.run(DbRedisReconciliationJobConstants.JOB_NAME, params);
