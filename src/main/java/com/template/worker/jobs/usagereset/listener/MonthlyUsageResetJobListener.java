@@ -8,7 +8,8 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.jobs.usagereset.support.MonthlyResetLockManager;
+import com.template.worker.jobs.common.support.BatchJobConstants;
+import com.template.worker.jobs.common.support.BatchLockManager;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MonthlyUsageResetJobListener implements JobExecutionListener {
 
-    private final MonthlyResetLockManager monthlyResetLockManager;
+    private final BatchLockManager batchLockManager;
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
@@ -65,12 +66,10 @@ public class MonthlyUsageResetJobListener implements JobExecutionListener {
                 failureCount,
                 jobExecution.getStatus());
 
-        String lockKey =
-                jobContext.getString(MonthlyUsageResetJobConstants.JOB_CONTEXT_LOCK_KEY, null);
-        String lockOwner =
-                jobContext.getString(MonthlyUsageResetJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
+        String lockKey = jobContext.getString(BatchJobConstants.JOB_CONTEXT_LOCK_KEY, null);
+        String lockOwner = jobContext.getString(BatchJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
         try {
-            boolean released = monthlyResetLockManager.releaseIfOwner(lockKey, lockOwner);
+            boolean released = batchLockManager.releaseIfOwner(lockKey, lockOwner);
             if (lockKey != null) {
                 log.info(
                         "Monthly usage reset final lock cleanup. lockKey={}, released={}",
