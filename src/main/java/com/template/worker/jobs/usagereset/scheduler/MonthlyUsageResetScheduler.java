@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.template.worker.global.alert.BatchAlertService;
 import com.template.worker.global.launcher.BatchJobLauncher;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MonthlyUsageResetScheduler {
 
     private final BatchJobLauncher launcher;
+    private final BatchAlertService batchAlertService;
 
     @Scheduled(
             cron = "${batch.schedules.monthly-usage-reset.cron:0 1 0 1 * *}",
@@ -46,6 +48,10 @@ public class MonthlyUsageResetScheduler {
                     "Failed to run monthly usage reset job by scheduler. targetMonth={}",
                     targetMonth,
                     exception);
+            batchAlertService.sendSchedulerFailureAlert(
+                    "monthly-usage-reset-scheduler",
+                    "targetMonth=" + targetMonth,
+                    exception.getMessage());
         }
     }
 }

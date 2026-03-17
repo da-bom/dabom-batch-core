@@ -1,35 +1,36 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: template-postgres
-    environment:
-      POSTGRES_DB: app
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
     ports:
-      - "5432:5432"
+      - "13306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: app_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+      TZ: Asia/Seoul
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
       timeout: 5s
       retries: 5
 
-  mongodb:
-    image: mongo:7-jammy
-    container_name: template-mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo
-      MONGO_INITDB_ROOT_PASSWORD: mongo
-      MONGO_INITDB_DATABASE: app
+  redis:
+    image: redis:8
+    container_name: redis
     ports:
-      - "27017:27017"
+      - "6379:6379"
     volumes:
-      - mongo_data:/data/db
+      - redis_data:/data
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
       timeout: 5s
       retries: 5
 
@@ -37,20 +38,13 @@ services:
     build: .
     container_name: template-worker
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
-      mongodb:
+      redis:
         condition: service_healthy
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DATABASE: app
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      MONGO_URI: mongodb://mongo:mongo@mongodb:27017/?authSource=admin
-      MONGO_DATABASE: app
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
 
 volumes:
-  postgres_data:
-  mongo_data:
+  mysql_data:
+  redis_data:

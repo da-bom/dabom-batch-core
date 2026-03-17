@@ -47,6 +47,10 @@ logging:
     org.springframework.batch: INFO
     com.template.worker: INFO
 
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL:}
+
 ---
 
 spring:

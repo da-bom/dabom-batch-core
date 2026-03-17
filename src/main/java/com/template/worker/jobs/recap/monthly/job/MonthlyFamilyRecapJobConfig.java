@@ -6,6 +6,7 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.template.worker.global.listener.JobFailureAlertListener;
 import com.template.worker.global.listener.JobResultListener;
 import com.template.worker.jobs.recap.monthly.listener.MonthlyFamilyRecapJobListener;
 import com.template.worker.jobs.recap.monthly.step.AcquireMonthlyFamilyRecapLockStepConfig;
@@ -21,6 +22,7 @@ public class MonthlyFamilyRecapJobConfig {
 
     private final JobRepository jobRepository;
     private final JobResultListener jobResultListener;
+    private final JobFailureAlertListener jobFailureAlertListener;
     private final MonthlyFamilyRecapJobListener monthlyFamilyRecapJobListener;
     private final AcquireMonthlyFamilyRecapLockStepConfig acquireMonthlyFamilyRecapLockStepConfig;
     private final ProcessMonthlyFamilyRecapStepConfig processMonthlyFamilyRecapStepConfig;
@@ -31,6 +33,7 @@ public class MonthlyFamilyRecapJobConfig {
         // 락 획득 실패면 정상 종료하고 락 획득 성공 시 집계 체인을 실행
         return new JobBuilder(MonthlyFamilyRecapJobConstants.JOB_NAME, jobRepository)
                 .listener(jobResultListener)
+                .listener(jobFailureAlertListener)
                 .listener(monthlyFamilyRecapJobListener)
                 .start(acquireMonthlyFamilyRecapLockStepConfig.acquireMonthlyFamilyRecapLockStep())
                 .on(MonthlyFamilyRecapJobConstants.EXIT_STATUS_LOCK_NOT_ACQUIRED)

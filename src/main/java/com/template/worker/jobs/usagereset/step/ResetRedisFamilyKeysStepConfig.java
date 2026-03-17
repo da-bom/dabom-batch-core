@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.template.worker.global.retry.BatchRetrySupport;
 import com.template.worker.jobs.usagereset.reader.ActiveFamilyReader;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetJobConstants;
 import com.template.worker.jobs.usagereset.support.MonthlyUsageResetProperties;
@@ -23,15 +24,21 @@ public class ResetRedisFamilyKeysStepConfig {
     private final ActiveFamilyReader reader;
     private final FamilyRedisResetWriter writer;
     private final MonthlyUsageResetProperties properties;
+    private final BatchRetrySupport batchRetrySupport;
 
     @Bean
     public Step resetRedisFamilyKeysStep() {
         // family id reader + redis delete writer의 Chunk Step 구성
-        return new StepBuilder(
-                        MonthlyUsageResetJobConstants.STEP_RESET_REDIS_FAMILY_KEYS, jobRepository)
-                .<Long, Long>chunk(properties.getRedisChunkSize(), transactionManager)
-                .reader(reader)
-                .writer(writer)
+        return batchRetrySupport
+                .applyRedisRetry(
+                        new StepBuilder(
+                                        MonthlyUsageResetJobConstants.STEP_RESET_REDIS_FAMILY_KEYS,
+                                        jobRepository)
+                                .<Long, Long>chunk(
+                                        properties.getRedisChunkSize(), transactionManager)
+                                .reader(reader)
+                                .writer(writer)
+                                .faultTolerant())
                 .build();
     }
 }

@@ -61,12 +61,19 @@ public class MonthlyFamilyRecapJobListener implements JobExecutionListener {
                 jobContext.getString(MonthlyFamilyRecapJobConstants.JOB_CONTEXT_LOCK_KEY, null);
         String lockOwner =
                 jobContext.getString(MonthlyFamilyRecapJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
-        boolean released = lockManager.releaseIfOwner(lockKey, lockOwner);
-        if (lockKey != null) {
-            log.info(
-                    "Monthly family recap final lock cleanup. lockKey={}, released={}",
+        try {
+            boolean released = lockManager.releaseIfOwner(lockKey, lockOwner);
+            if (lockKey != null) {
+                log.info(
+                        "Monthly family recap final lock cleanup. lockKey={}, released={}",
+                        lockKey,
+                        released);
+            }
+        } catch (Exception exception) {
+            log.error(
+                    "Monthly family recap final lock cleanup failed. lockKey={}",
                     lockKey,
-                    released);
+                    exception);
         }
     }
 

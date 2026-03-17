@@ -83,18 +83,25 @@ public class DbRedisReconciliationJobListener implements JobExecutionListener {
         String lockOwner =
                 jobContext.getString(
                         DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_OWNER, null);
-        boolean released = lockManager.releaseIfOwner(lockKey, lockOwner);
-        if (released) {
-            jobContext.putString(
-                    DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_RELEASED,
-                    String.valueOf(true));
-        }
+        try {
+            boolean released = lockManager.releaseIfOwner(lockKey, lockOwner);
+            if (released) {
+                jobContext.putString(
+                        DbRedisReconciliationJobConstants.JOB_CONTEXT_LOCK_RELEASED,
+                        String.valueOf(true));
+            }
 
-        if (lockKey != null) {
-            log.info(
-                    "DB-Redis reconciliation final lock cleanup. lockKey={}, released={}",
+            if (lockKey != null) {
+                log.info(
+                        "DB-Redis reconciliation final lock cleanup. lockKey={}, released={}",
+                        lockKey,
+                        released);
+            }
+        } catch (Exception exception) {
+            log.error(
+                    "DB-Redis reconciliation final lock cleanup failed. lockKey={}",
                     lockKey,
-                    released);
+                    exception);
         }
     }
 
