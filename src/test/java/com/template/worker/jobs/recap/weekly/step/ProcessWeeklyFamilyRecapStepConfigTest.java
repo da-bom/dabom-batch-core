@@ -54,7 +54,7 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
                         properties,
                         new BatchRetrySupport(3, 0L));
 
-        when(reader.read()).thenReturn(10L, null);
+        when(reader.read()).thenReturn(10L, (Long) null);
         when(processor.process(10L)).thenReturn(createRow());
 
         AtomicInteger attempts = new AtomicInteger();
@@ -98,7 +98,7 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
                         properties,
                         new BatchRetrySupport(3, 0L));
 
-        when(reader.read()).thenReturn(10L, null);
+        when(reader.read()).thenReturn(10L, (Long) null);
         when(processor.process(10L)).thenReturn(createRow());
         doThrow(new PessimisticLockingFailureException("deadlock", null)).when(writer).write(any());
 
