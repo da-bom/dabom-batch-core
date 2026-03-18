@@ -5,7 +5,7 @@
 # 로컬 개발 시에는 기존 Dockerfile (멀티스테이지 빌드)을 사용하세요.
 # ============================================================================
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 

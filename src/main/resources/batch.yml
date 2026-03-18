@@ -1,8 +1,7 @@
 spring:
   batch:
     job:
-      enabled: ${BATCH_JOB_ENABLED:true}
-      name: weekly-family-recap-job,monthly-family-recap-job,monthly-usage-precreate-job,monthly-usage-reset-job,db-redis-reconciliation-job,usage-event-outbox-job
+      enabled: ${BATCH_JOB_ENABLED:false}
     jdbc:
       initialize-schema: always
 
