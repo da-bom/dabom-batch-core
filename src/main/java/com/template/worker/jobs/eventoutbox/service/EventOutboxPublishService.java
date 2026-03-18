@@ -24,7 +24,7 @@ public class EventOutboxPublishService {
     private final EventOutboxKafkaPublisher kafkaPublisher;
     private final EventOutboxRetryPolicy retryPolicy;
     private final EventOutboxProperties properties;
-    private final ExecutorService usageEventOutboxExecutor;
+    private final ExecutorService eventOutboxExecutor;
     private final EventOutboxMetrics metrics;
 
     public EventOutboxPublishService(
@@ -33,14 +33,14 @@ public class EventOutboxPublishService {
             EventOutboxKafkaPublisher kafkaPublisher,
             EventOutboxRetryPolicy retryPolicy,
             EventOutboxProperties properties,
-            ExecutorService usageEventOutboxExecutor,
+            ExecutorService eventOutboxExecutor,
             EventOutboxMetrics metrics) {
         this.repository = repository;
         this.payloadMapper = payloadMapper;
         this.kafkaPublisher = kafkaPublisher;
         this.retryPolicy = retryPolicy;
         this.properties = properties;
-        this.usageEventOutboxExecutor = usageEventOutboxExecutor;
+        this.eventOutboxExecutor = eventOutboxExecutor;
         this.metrics = metrics;
     }
 
@@ -60,7 +60,7 @@ public class EventOutboxPublishService {
                         .map(
                                 row ->
                                         CompletableFuture.runAsync(
-                                                () -> processRow(row), usageEventOutboxExecutor))
+                                                () -> processRow(row), eventOutboxExecutor))
                         .toList();
 
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();

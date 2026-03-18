@@ -20,12 +20,12 @@ public class EventOutboxPublishJobConfig {
     private final JobResultListener jobResultListener;
     private final PublishEventOutboxStepConfig publishEventOutboxStepConfig;
 
-    /** usage outbox publish 전용 단일 step job을 등록한다. */
+    /** event outbox publish 전용 단일 step job을 등록한다. */
     @Bean
-    public Job usageEventOutboxPublishJob() {
+    public Job eventOutboxPublishJob() {
         return new JobBuilder(EventOutboxJobConstants.JOB_NAME, jobRepository)
                 .listener(jobResultListener)
-                .start(publishEventOutboxStepConfig.publishUsageEventOutboxStep())
+                .start(publishEventOutboxStepConfig.publishEventOutboxStep())
                 .build();
     }
 }

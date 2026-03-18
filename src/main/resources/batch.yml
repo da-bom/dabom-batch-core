@@ -27,7 +27,7 @@ batch:
       enabled: ${BATCH_DB_REDIS_RECONCILIATION_ENABLED:true}
       cron: ${BATCH_DB_REDIS_RECONCILIATION_CRON:0 0 3 * * *}
     event-outbox:
-      enabled: ${BATCH_EVENT_OUTBOX_ENABLED:true}
+      enabled: ${BATCH_EVENT_OUTBOX_ENABLED:false}
       fixed-delay: ${BATCH_EVENT_OUTBOX_FIXED_DELAY:60000}
       initial-delay: ${BATCH_EVENT_OUTBOX_INITIAL_DELAY:5000}
 

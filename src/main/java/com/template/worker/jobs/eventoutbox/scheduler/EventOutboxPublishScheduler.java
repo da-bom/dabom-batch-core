@@ -27,11 +27,11 @@ public class EventOutboxPublishScheduler {
             fixedDelayString = "${batch.schedules.event-outbox.fixed-delay:10000}",
             initialDelayString = "${batch.schedules.event-outbox.initial-delay:5000}",
             zone = EventOutboxJobConstants.KST_ZONE_ID_NAME)
-    public void publishUsageEventOutboxes() {
+    public void publishEventOutboxes() {
         try {
             launcher.run(EventOutboxJobConstants.JOB_NAME, Collections.emptyMap());
         } catch (Exception exception) {
-            log.error("Failed to run usage event outbox publish job by scheduler.", exception);
+            log.error("Failed to run event outbox publish job by scheduler.", exception);
         }
     }
 }

@@ -20,11 +20,11 @@ public class PublishEventOutboxStepConfig {
     private final PlatformTransactionManager transactionManager;
     private final EventOutboxPublishTasklet tasklet;
 
-    /** usage outbox publish tasklet을 감싸는 단일 step을 구성한다. */
+    /** event outbox publish tasklet을 감싸는 단일 step을 구성한다. */
     @Bean
-    public Step publishUsageEventOutboxStep() {
+    public Step publishEventOutboxStep() {
         return new StepBuilder(
-                        EventOutboxJobConstants.STEP_PUBLISH_USAGE_EVENT_OUTBOX, jobRepository)
+                        EventOutboxJobConstants.STEP_PUBLISH_EVENT_OUTBOX, jobRepository)
                 .tasklet(tasklet, transactionManager)
                 .build();
     }

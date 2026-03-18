@@ -11,7 +11,7 @@ public class EventOutboxConfig {
 
     /** Outbox 발행 작업에서 사용할 고정 크기 워커 풀을 생성한다. */
     @Bean(destroyMethod = "shutdown")
-    public ExecutorService usageEventOutboxExecutor(EventOutboxProperties properties) {
+    public ExecutorService eventOutboxExecutor(EventOutboxProperties properties) {
         return Executors.newFixedThreadPool(properties.getConcurrency());
     }
 }
