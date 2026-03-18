@@ -45,6 +45,14 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
+// OpenTelemetry BOM for consistent versions
+dependencyManagement {
+    imports {
+        mavenBom 'io.opentelemetry:opentelemetry-bom:1.44.1'
+        mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha:2.11.0-alpha'
+    }
+}
+
 dependencies {
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -62,11 +70,16 @@ dependencies {
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    // Monitoring & Observability
+    // Monitoring & Observability - OpenTelemetry (traces, logs)
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter'
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0'
+
+    // Micrometer - Prometheus (local scraping) + OTLP (push to Alloy)
     implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.micrometer:micrometer-registry-otlp'
+
+    // Structured logging
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
-    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
-    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
