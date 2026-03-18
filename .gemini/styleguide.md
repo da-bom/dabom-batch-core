@@ -34,7 +34,7 @@ com.template.worker
 │   ├─ controller/               # REST 엔드포인트 (배치 실행 전용)
 │   ├─ service/                  # Launcher에 위임만
 │   └─ dto/                      # 배치 실행 요청 DTO
-├─ global/                       # 배치 인프라 (횡단 관심사)
+├─ common/                       # 배치 인프라 (횡단 관심사)
 │   ├─ config/                   # @EnableBatchProcessing 등 배치 설정
 │   ├─ launcher/                 # BatchJobLauncher (중앙 Job 실행 엔진)
 │   └─ listener/                 # JobResultListener, JobLogger (공통 리스너)
@@ -48,7 +48,7 @@ com.template.worker
 ```
 
 - `jobs/` 아래는 **feature(업무) 기준**으로 패키지를 나눈다.
-- `global/`은 횡단 관심사만 둔다. 특정 Job의 비즈니스 로직을 `global/`에 두지 않는다.
+- `common/`은 횡단 관심사만 둔다. 특정 Job의 비즈니스 로직을 `common/`에 두지 않는다.
 
 ### 도입하지 않는 것
 
@@ -215,7 +215,7 @@ public class BatchAdminService {
 
 ---
 
-## 6) Global 계층 규칙 (배치 인프라)
+## 6) Common 계층 규칙 (배치 인프라)
 
 ### config/
 
@@ -299,7 +299,7 @@ public class RunBatchRequest {
 | **Controller에 배치 로직** | Controller는 트리거만 담당, 실행은 Launcher에 위임 |
 | **Job 직접 실행** | `JobLauncher`를 직접 호출하지 않고 `BatchJobLauncher`를 통해 실행 |
 | **하나의 Config에 여러 Job/Step** | Job Config, Step Config 파일은 각각 하나의 Bean만 정의 |
-| **global에 Job 비즈니스 로직** | global은 횡단 관심사(config, launcher, listener)만 허용 |
+| **common에 Job 비즈니스 로직** | common은 횡단 관심사(config, launcher, listener)만 허용 |
 | **Service에 Interface + Impl** | 배치 서비스는 단순 클래스로 작성 (인터페이스 분리 불필요) |
 | **chunk size 미지정** | StepBuilder에서 chunk size를 명시적으로 지정해야 한다 |
 | **Job/Step 이름 불일치** | Job/Step 이름은 kebab-case를 사용하고 클래스명과 의미가 일치해야 한다 |
