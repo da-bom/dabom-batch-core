@@ -26,10 +26,10 @@ batch:
     db-redis-reconciliation:
       enabled: ${BATCH_DB_REDIS_RECONCILIATION_ENABLED:true}
       cron: ${BATCH_DB_REDIS_RECONCILIATION_CRON:0 0 3 * * *}
-    usage-event-outbox:
-      enabled: ${BATCH_USAGE_EVENT_OUTBOX_ENABLED:false}
-      fixed-delay: ${BATCH_USAGE_EVENT_OUTBOX_FIXED_DELAY:60000}
-      initial-delay: ${BATCH_USAGE_EVENT_OUTBOX_INITIAL_DELAY:5000}
+    event-outbox:
+      enabled: ${BATCH_EVENT_OUTBOX_ENABLED:true}
+      fixed-delay: ${BATCH_EVENT_OUTBOX_FIXED_DELAY:60000}
+      initial-delay: ${BATCH_EVENT_OUTBOX_INITIAL_DELAY:5000}
 
   jobs:
     weekly-family-recap:
@@ -51,12 +51,11 @@ batch:
       lock-ttl: ${BATCH_DB_REDIS_RECONCILIATION_LOCK_TTL:PT1H}
       redis-chunk-size: ${BATCH_DB_REDIS_RECONCILIATION_REDIS_CHUNK_SIZE:2000}
       db-fetch-size: ${BATCH_DB_REDIS_RECONCILIATION_DB_FETCH_SIZE:4000}
-    usage-event-outbox:
-      batch-size: ${BATCH_USAGE_EVENT_OUTBOX_BATCH_SIZE:100}
-      concurrency: ${BATCH_USAGE_EVENT_OUTBOX_CONCURRENCY:8}
-      max-retry: ${BATCH_USAGE_EVENT_OUTBOX_MAX_RETRY:5}
-      retry-initial-delay: ${BATCH_USAGE_EVENT_OUTBOX_RETRY_INITIAL_DELAY:PT1M}
-      retry-max-delay: ${BATCH_USAGE_EVENT_OUTBOX_RETRY_MAX_DELAY:PT16M}
-      retry-eligibility-delay: ${BATCH_USAGE_EVENT_OUTBOX_RETRY_ELIGIBILITY_DELAY:PT1M}
-      publish-timeout: ${BATCH_USAGE_EVENT_OUTBOX_PUBLISH_TIMEOUT:PT10S}
-      topic: ${BATCH_USAGE_EVENT_OUTBOX_TOPIC:notification}
+    event-outbox:
+      batch-size: ${BATCH_EVENT_OUTBOX_BATCH_SIZE:100}
+      concurrency: ${BATCH_EVENT_OUTBOX_CONCURRENCY:8}
+      max-retry: ${BATCH_EVENT_OUTBOX_MAX_RETRY:5}
+      retry-initial-delay: ${BATCH_EVENT_OUTBOX_RETRY_INITIAL_DELAY:PT1M}
+      retry-max-delay: ${BATCH_EVENT_OUTBOX_RETRY_MAX_DELAY:PT16M}
+      retry-eligibility-delay: ${BATCH_EVENT_OUTBOX_RETRY_ELIGIBILITY_DELAY:PT1M}
+      publish-timeout: ${BATCH_EVENT_OUTBOX_PUBLISH_TIMEOUT:PT10S}
