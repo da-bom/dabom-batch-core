@@ -23,8 +23,7 @@ public class PublishEventOutboxStepConfig {
     /** event outbox publish tasklet을 감싸는 단일 step을 구성한다. */
     @Bean
     public Step publishEventOutboxStep() {
-        return new StepBuilder(
-                        EventOutboxJobConstants.STEP_PUBLISH_EVENT_OUTBOX, jobRepository)
+        return new StepBuilder(EventOutboxJobConstants.STEP_PUBLISH_EVENT_OUTBOX, jobRepository)
                 .tasklet(tasklet, transactionManager)
                 .build();
     }
