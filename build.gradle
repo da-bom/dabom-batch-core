@@ -65,7 +65,7 @@ dependencies {
     // Database (JDBC — 배치 메타데이터 + ETL 데이터 소스)
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     runtimeOnly 'com.mysql:mysql-connector-j'
-    implementation 'com.github.da-bom:lib-kafka:v1.0.0'
+    implementation 'com.github.da-bom:lib-kafka:v1.0.1'
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'

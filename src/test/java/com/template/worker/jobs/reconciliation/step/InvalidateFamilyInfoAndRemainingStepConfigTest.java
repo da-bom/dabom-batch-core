@@ -90,7 +90,7 @@ class InvalidateFamilyInfoAndRemainingStepConfigTest {
                         properties,
                         new BatchRetrySupport(3, 0L));
 
-        when(reader.read()).thenReturn(10L, null);
+        when(reader.read()).thenReturn(10L, (Long) null);
         doThrow(new RedisConnectionFailureException("redis")).when(writer).write(any());
 
         Step step = stepConfig.invalidateFamilyInfoAndRemainingStep();
