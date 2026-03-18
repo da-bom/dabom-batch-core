@@ -1,8 +1,8 @@
 spring:
   batch:
     job:
-      enabled: ${BATCH_JOB_ENABLED:false}
-      name: healthCheckJob
+      enabled: ${BATCH_JOB_ENABLED:true}
+      name: weekly-family-recap-job,monthly-family-recap-job,monthly-usage-precreate-job,monthly-usage-reset-job,db-redis-reconciliation-job,usage-event-outbox-job
     jdbc:
       initialize-schema: always
 
@@ -13,19 +13,19 @@ batch:
 
   schedules:
     weekly-family-recap:
-      enabled: ${BATCH_WEEKLY_FAMILY_RECAP_ENABLED:false}
+      enabled: ${BATCH_WEEKLY_FAMILY_RECAP_ENABLED:true}
       cron: ${BATCH_WEEKLY_FAMILY_RECAP_CRON:0 10 0 * * MON}
     monthly-family-recap:
-      enabled: ${BATCH_MONTHLY_FAMILY_RECAP_ENABLED:false}
+      enabled: ${BATCH_MONTHLY_FAMILY_RECAP_ENABLED:true}
       cron: ${BATCH_MONTHLY_FAMILY_RECAP_CRON:0 20 0 1 * *}
     monthly-usage-precreate:
-      enabled: ${BATCH_MONTHLY_USAGE_PRECREATE_ENABLED:false}
+      enabled: ${BATCH_MONTHLY_USAGE_PRECREATE_ENABLED:true}
       cron: ${BATCH_MONTHLY_USAGE_PRECREATE_CRON:0 30 23 28-31 * *}
     monthly-usage-reset:
-      enabled: ${BATCH_MONTHLY_USAGE_RESET_ENABLED:false}
+      enabled: ${BATCH_MONTHLY_USAGE_RESET_ENABLED:true}
       cron: ${BATCH_MONTHLY_USAGE_RESET_CRON:0 1 0 1 * *}
     db-redis-reconciliation:
-      enabled: ${BATCH_DB_REDIS_RECONCILIATION_ENABLED:false}
+      enabled: ${BATCH_DB_REDIS_RECONCILIATION_ENABLED:true}
       cron: ${BATCH_DB_REDIS_RECONCILIATION_CRON:0 0 3 * * *}
     usage-event-outbox:
       enabled: ${BATCH_USAGE_EVENT_OUTBOX_ENABLED:false}
@@ -35,11 +35,11 @@ batch:
   jobs:
     weekly-family-recap:
       lock-ttl: ${BATCH_WEEKLY_FAMILY_RECAP_LOCK_TTL:PT1H}
-      chunk-size: ${BATCH_WEEKLY_FAMILY_RECAP_CHUNK_SIZE:1000}
+      chunk-size: ${BATCH_WEEKLY_FAMILY_RECAP_CHUNK_SIZE:500}
       db-fetch-size: ${BATCH_WEEKLY_FAMILY_RECAP_DB_FETCH_SIZE:1000}
     monthly-family-recap:
       lock-ttl: ${BATCH_MONTHLY_FAMILY_RECAP_LOCK_TTL:PT1H}
-      chunk-size: ${BATCH_MONTHLY_FAMILY_RECAP_CHUNK_SIZE:1000}
+      chunk-size: ${BATCH_MONTHLY_FAMILY_RECAP_CHUNK_SIZE:500}
       db-fetch-size: ${BATCH_MONTHLY_FAMILY_RECAP_DB_FETCH_SIZE:1000}
     monthly-usage-precreate:
       lock-ttl: ${BATCH_MONTHLY_USAGE_PRECREATE_LOCK_TTL:PT1H}
