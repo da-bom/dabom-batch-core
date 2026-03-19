@@ -9,7 +9,7 @@ spring:
       - redis.yml
       - batch.yml
   application:
-    name: template-worker
+    name: batch-core
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
@@ -35,6 +35,21 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        spring.data.repository.invocations: true
+        kafka.consumer.processing.time: true
+        kafka.consumer.producer-to-consumer.latency: true
+        spring.batch.job: true
+        spring.batch.step: true
+        spring.batch.chunk.write: true
+        spring.batch.item.process: true
+        spring.batch.item.read: true
+      minimum-expected-value:
+        http.server.requests: 1ms
+      maximum-expected-value:
+        http.server.requests: 10s
   otlp:
     metrics:
       export:
