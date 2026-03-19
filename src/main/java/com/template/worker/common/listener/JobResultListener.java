@@ -35,9 +35,9 @@ public class JobResultListener {
                             ? null
                             : jobExecution.getAllFailureExceptions().get(0);
 
-            jobLogger.jobFailed(jobName, duration, cause);
+            jobLogger.jobFailed(jobExecution.getId(), jobName, duration, cause);
         } else {
-            jobLogger.jobSuccess(jobName, duration);
+            jobLogger.jobSuccess(jobExecution.getId(), jobName, duration);
         }
     }
 }

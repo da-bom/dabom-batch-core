@@ -8,11 +8,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class JobLogger {
-    public void jobSuccess(String jobName, long durationMs) {
-        log.info("[BATCH SUCCESS] job={} duration={}ms", jobName, durationMs);
+    public void jobSuccess(Long jobExecutionId, String jobName, long durationMs) {
+        log.info(
+                "[BATCH SUCCESS] job={} jobExecutionId={} duration={}ms",
+                jobName,
+                jobExecutionId,
+                durationMs);
     }
 
-    public void jobFailed(String jobName, long durationMs, Throwable cause) {
-        log.error("[BATCH FAILED] job={} duration={}ms", jobName, durationMs, cause);
+    public void jobFailed(Long jobExecutionId, String jobName, long durationMs, Throwable cause) {
+        log.error(
+                "[BATCH FAILED] job={} jobExecutionId={} duration={}ms",
+                jobName,
+                jobExecutionId,
+                durationMs,
+                cause);
     }
 }
