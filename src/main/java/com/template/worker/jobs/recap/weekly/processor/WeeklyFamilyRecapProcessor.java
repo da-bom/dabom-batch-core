@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
@@ -45,10 +46,19 @@ public class WeeklyFamilyRecapProcessor
 
     @Override
     public WeeklyFamilyRecapRow process(Long familyId) {
-        // 가족별 원본 집계값을 조회
-        WeeklyFamilyRecapSourceMetrics sourceMetrics =
-                aggregationRepository.aggregate(familyId, weekStartDate);
+        return toRow(familyId, aggregationRepository.aggregate(familyId, weekStartDate));
+    }
 
+    public List<WeeklyFamilyRecapRow> processAll(List<Long> familyIds) {
+        Map<Long, WeeklyFamilyRecapSourceMetrics> sourceMetricsByFamily =
+                aggregationRepository.aggregate(familyIds, weekStartDate);
+
+        return familyIds.stream()
+                .map(familyId -> toRow(familyId, sourceMetricsByFamily.get(familyId)))
+                .collect(Collectors.toList());
+    }
+
+    private WeeklyFamilyRecapRow toRow(Long familyId, WeeklyFamilyRecapSourceMetrics sourceMetrics) {
         // writer 진입 전에 집계값 검증
         validateSourceMetrics(familyId, sourceMetrics);
 
