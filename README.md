@@ -1,20 +1,35 @@
-# DABOM-BATCH-CORE
+# DABOM-BATCH-CORE ✨
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-21-ff6f00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21" />
+  <img src="https://img.shields.io/badge/Spring_Boot-3.4-6db33f?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot" />
+  <img src="https://img.shields.io/badge/Spring_Batch-5.2-4caf50?style=for-the-badge&logo=spring&logoColor=white" alt="Spring Batch" />
+  <img src="https://img.shields.io/badge/Gradle-02303a?style=for-the-badge&logo=gradle&logoColor=white" alt="Gradle" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/MySQL-8.0-4479a1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Redis-3.4.0-dc382d?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/Kafka-231f20?style=for-the-badge&logo=apachekafka&logoColor=white" alt="Kafka" />
+  <img src="https://img.shields.io/badge/Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+</p>
+
+---
 
 `dabom-batch-core`는 DABOM 시스템의 배치 전용 서버다. 실시간 처리 계층이 해결하지 못하는 월경계 전환, DB-Redis 정합성 복구, 주간·월간 리캡 사전 집계, `usage_event_outbox` 후행 발행을 담당한다.
 
 즉, 이 모듈은 "가끔 도는 보조 작업"이 아니라 운영 안정성과 사용자 리포트 품질을 유지하는 핵심 운영 계층이다.
 
-## DABOM-BATCH-CORE가 하는 일
+## 📌 DABOM-BATCH-CORE가 하는 일
 
-- 월말에 다음 달 `customer_quota`와 `family_quota`를 미리 만들어 월초 첫 이벤트를 안전하게 처리한다.
-- 월초에 전월 Redis 키를 정리해 월경계 캐시를 안정화한다.
-- DB를 기준으로 Redis 캐시를 무효화해 정합성 불일치를 복구한다.
-- 주간/월간 가족 리캡을 미리 생성해 API가 무거운 집계를 실시간으로 하지 않게 만든다.
-- `processor-usage`가 적재한 `usage_event_outbox`를 읽어 `notification-events` 토픽으로 후행 발행한다.
+- 🗓️ 월말에 다음 달 `customer_quota`와 `family_quota`를 미리 만들어 월초 첫 이벤트를 안전하게 처리한다.
+- 🧹 월초에 전월 Redis 키를 정리해 월경계 캐시를 안정화한다.
+- 🧭 DB를 기준으로 Redis 캐시를 무효화해 정합성 불일치를 복구한다.
+- 📊 주간/월간 가족 리캡을 미리 생성해 API가 무거운 집계를 실시간으로 하지 않게 만든다.
+- 🔔 `processor-usage`가 적재한 `usage_event_outbox`를 읽어 `notification-events` 토픽으로 후행 발행한다.
 
 ```mermaid
 flowchart LR
-    AC["api-core<br/>정책/조회 API"]
     PU["processor-usage<br/>실시간 사용량 처리"]
     BC["dabom-batch-core<br/>운영 배치 서버"]
     DB[("MySQL<br/>source of truth")]
@@ -22,18 +37,16 @@ flowchart LR
     KF[["Kafka"]]
     AN["api-notification<br/>알림 소비/SSE"]
 
-    AC --> DB
-    AC --> RD
-    PU --> RD
-    PU --> DB
-    PU -->|usage_event_outbox 적재| DB
+    PU -->|event_outbox 적재| DB
+
     BC -->|월경계 안정화 / 리캡 집계| DB
     BC -->|캐시 무효화 / 분산 락| RD
     BC -->|notification-events 발행| KF
+
     KF --> AN
 ```
 
-## 왜 별도 배치 서버가 필요한가
+## 🤔 왜 별도 배치 서버가 필요한가
 
 ```mermaid
 flowchart TB
@@ -50,9 +63,9 @@ flowchart TB
     O --> A["재시도 + Slack 실패 알람"]
 ```
 
-## 핵심 Job
+## ⚙️ 핵심 Job
 
-### 운영 핵심 5개
+### 🧱 운영 핵심 5개
 
 | Job | 기본 스케줄 (KST) | 기본 파라미터 | 주된 읽기 소스 | 주된 쓰기 대상 | 역할 |
 | --- | --- | --- | --- | --- | --- |
@@ -62,13 +75,13 @@ flowchart TB
 | `weekly-family-recap-job` | 매주 월요일 00:10 (`0 10 0 * * MON`) | `weekStartDate=직전 주 월요일` | `usage_record`, `mission`, `appeal`, `family_quota` | `family_recap_weekly` | 주간 가족 리캡 생성 |
 | `monthly-family-recap-job` | 매월 1일 00:20 (`0 20 0 1 * *`) | `targetMonth=직전 달 1일` | `family_recap_weekly`, 보강 raw 집계, `family_quota` | `family_recap_monthly` | 월간 가족 리캡 생성 |
 
-### 운영 보조 1개
+### 🛠️ 운영 보조 1개
 
 | Job | 기본 스케줄 (KST) | 기본 파라미터 | 주된 읽기 소스 | 주된 쓰기 대상 | 역할 |
 | --- | --- | --- | --- | --- | --- |
-| `event-outbox-publish-job` | 기본 비활성화, 활성화 시 fixed delay 60초 / initial delay 5초 | 없음 | `usage_event_outbox` | Kafka `notification-events`, outbox 상태 컬럼 | 알림 이벤트 후행 발행 및 재시도 |
+| `event-outbox-publish-job` | 기본 비활성화, 활성화 시 fixed delay 60초 / initial delay 5초 | 없음 | `event_outbox` | Kafka `notification-events`, outbox 상태 컬럼 | 알림 이벤트 후행 발행 및 재시도 |
 
-### Job별 포인트
+### 🔎 Job별 포인트
 
 | Job | 락/멱등성 포인트 | 비고 |
 | --- | --- | --- |
@@ -79,7 +92,7 @@ flowchart TB
 | `monthly-family-recap-job` | `targetMonth` 기준 락 + 월간 UPSERT | 주간 스냅샷 재사용 + 부족분 raw 보강 |
 | `event-outbox-publish-job` | outbox row 상태 전이로 재시도 제어 | 다른 5개처럼 기간 파라미터 기반 Redis 락을 쓰지 않음 |
 
-## 공통 실행 흐름
+## 🔄 공통 실행 흐름
 
 스케줄러와 수동 실행은 같은 `BatchJobLauncher`를 통해 동일한 규칙으로 동작한다.
 
@@ -96,14 +109,14 @@ flowchart LR
     A --> U["락 해제"]
 ```
 
-### 재시도와 알람
+### 🚨 재시도와 알람
 
 - 기본 재시도 설정은 `batch.yml` 기준 `3회`, backoff `3000ms`다.
 - 재시도 대상은 DB 데드락, DB 쿼리 타임아웃, Redis 연결 실패 일부 step이다.
 - Slack 알람은 중간 실패가 아니라 `BatchStatus.FAILED` 최종 실패일 때만 보낸다.
 - 스케줄러가 Job launch 전에 실패한 경우는 Job 실패 알람과 별도로 스케줄러 실패 알람을 보낸다.
 
-## 월경계 운영 흐름
+## 📆 월경계 운영 흐름
 
 ```mermaid
 flowchart LR
@@ -123,7 +136,7 @@ flowchart LR
 - `Reconciliation`은 DB 기준으로 Redis를 비워 다음 조회/워밍업에서 올바른 상태를 다시 적재하게 만든다.
 - `Weekly`와 `Monthly`는 API가 직접 계산하지 않도록 리캡 결과를 미리 생성한다.
 
-## Outbox 후행 발행 흐름
+## 📤 Outbox 후행 발행 흐름
 
 ```mermaid
 sequenceDiagram
@@ -133,7 +146,7 @@ sequenceDiagram
     participant KF as Kafka
     participant AN as api-notification
 
-    PU->>DB: usage_event_outbox 적재
+    PU->>DB: event_outbox 적재
     BC->>DB: 발행 가능한 outbox row polling
     BC->>KF: notification-events 발행
     BC->>DB: SENT 또는 재시도 상태 업데이트
@@ -146,7 +159,7 @@ sequenceDiagram
 - 병렬 executor로 payload를 Kafka에 발행한다.
 - 성공 시 `SENT`, 재시도 가능 시 다음 시각 예약, 최종 실패 시 `FAILED`로 상태를 바꾼다.
 
-## 재실행 안전성
+## 🛡️ 재실행 안전성
 
 ```mermaid
 flowchart TB
@@ -162,7 +175,7 @@ flowchart TB
 - 동일 월/주에 대한 병렬 실행은 락으로 막고, 같은 기간 재실행은 UPSERT/조건부 INSERT/DEL로 안전하게 처리한다.
 - 이 설계 때문에 수동 복구 실행과 스케줄 실행이 같은 날 겹쳐도 데이터 파손 가능성을 낮춘다.
 
-## 실행 및 개발 가이드
+## 🧪 실행 및 개발 가이드
 
 ### 1. 로컬 실행 준비
 
@@ -206,7 +219,7 @@ PowerShell에서는 `Copy-Item .env.example .env`를 사용할 수 있다.
 ./gradlew bootRun
 ```
 
-## 수동 실행 API
+## 🎛️ 수동 실행 API
 
 외부 운영 도구나 관리자 요청으로 배치를 수동 트리거할 수 있다.
 
@@ -223,7 +236,7 @@ PowerShell에서는 `Copy-Item .env.example .env`를 사용할 수 있다.
 }
 ```
 
-### 지원 `jobName`
+### 🧾 지원 `jobName`
 
 - `monthly-usage-precreate-job`
 - `monthly-usage-reset-job`
@@ -232,7 +245,7 @@ PowerShell에서는 `Copy-Item .env.example .env`를 사용할 수 있다.
 - `monthly-family-recap-job`
 - `event-outbox-publish-job`
 
-### 파라미터 규칙
+### 🧩 파라미터 규칙
 
 | 파라미터 | 형식 | 규칙 | 기본값 |
 | --- | --- | --- | --- |
@@ -240,7 +253,7 @@ PowerShell에서는 `Copy-Item .env.example .env`를 사용할 수 있다.
 | `weekStartDate` | `yyyy-MM-dd` | 월요일만 허용 | 직전 주 월요일 |
 | `launchTime` | epoch millis | 미지정 시 launcher가 자동 추가 | 자동 생성 |
 
-### Job별 기본 파라미터
+### 📅 Job별 기본 파라미터
 
 | Job | 기본값 |
 | --- | --- |
@@ -251,7 +264,7 @@ PowerShell에서는 `Copy-Item .env.example .env`를 사용할 수 있다.
 | `weekly-family-recap-job` | 직전 주 월요일 |
 | `event-outbox-publish-job` | 없음 |
 
-### 수동 실행 예시
+### ✍️ 수동 실행 예시
 
 주간 리캡:
 
@@ -284,10 +297,10 @@ Outbox 발행:
 }
 ```
 
-## 주요 환경설정 키
+## 🔑 주요 환경설정 키
 
 
-### 공통
+### 🌐 공통
 
 | 키 | 의미 | 기본값 |
 | --- | --- | --- |
@@ -296,7 +309,7 @@ Outbox 발행:
 | `BATCH_RETRY_BACKOFF_MILLIS` | 공통 backoff | `3000` |
 | `SLACK_WEBHOOK_URL` | 최종 실패 알람 Webhook | 빈 값 |
 
-### 스케줄 제어
+### ⏰ 스케줄 제어
 
 | 키 | 의미 | 기본값                 |
 | --- | --- |---------------------|
@@ -314,7 +327,7 @@ Outbox 발행:
 | `BATCH_EVENT_OUTBOX_FIXED_DELAY` | outbox 발행 fixed delay | `60000`             |
 | `BATCH_EVENT_OUTBOX_INITIAL_DELAY` | outbox 발행 initial delay | `5000`              |
 
-### Job 튜닝
+### 🧰 Job 튜닝
 
 | 계열 | 대표 키 |
 | --- | --- |
@@ -324,11 +337,11 @@ Outbox 발행:
 | Redis 청크 크기 | `BATCH_*_REDIS_CHUNK_SIZE` |
 | outbox 발행 튜닝 | `BATCH_EVENT_OUTBOX_BATCH_SIZE`, `BATCH_EVENT_OUTBOX_CONCURRENCY`, `BATCH_EVENT_OUTBOX_MAX_RETRY` 등 |
 
-## 코드 구조
+## 🗂️ 코드 구조
 
 
 
-### 패키지 맵
+### 🧱 패키지 맵
 
 | 경로 | 역할 |
 | --- | --- |
@@ -339,18 +352,16 @@ Outbox 발행:
 | `jobs/reconciliation` | DB 기준 Redis 무효화 |
 | `jobs/recap/weekly` | 주간 가족 리캡 생성 |
 | `jobs/recap/monthly` | 월간 가족 리캡 생성 |
-| `jobs/eventoutbox` | `usage_event_outbox` 후행 발행 |
+| `jobs/eventoutbox` | `event_outbox` 후행 발행 |
 | `resources/*.yml` | MySQL/Redis/Batch/로그 설정 |
 
-## 운영 시 주의사항
+## ⚠️ 운영 시 주의사항
 
 - 분산 락은 Redis를 사용하며, 기간 파라미터를 포함한 키로 동일 월/주 병렬 실행을 막는다.
 - 파라미터 기본값은 모두 KST(`Asia/Seoul`) 기준으로 계산된다.
 - 문서보다 코드가 최신일 수 있으므로, 운영 판단의 source of truth는 항상 코드와 `batch.yml`이다.
-- `event-outbox` 스케줄 환경변수는 `BATCH_EVENT_OUTBOX_*` 기준으로 봐야 한다.
-  - 현재 `.env.example`에는 `BATCH_USAGE_EVENT_OUTBOX_*` 이름이 섞여 있으므로 그대로 복사하지 않는 편이 안전하다.
 - `monthly-usage-precreate-job`은 cron만 보면 28~31일에 실행되지만, 코드에서 "실제 월말"인지 다시 검증한다.
 
-## 관련 문서
+## 🔗 관련 문서
 
 - [다봄 프로젝트 소개](https://github.com/da-bom)
