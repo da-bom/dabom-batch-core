@@ -584,10 +584,21 @@ public class MonthlyFamilyRecapAggregationRepository {
         if (value instanceof Timestamp timestampValue) {
             return timestampValue;
         }
+        if (value instanceof LocalDateTime localDateTimeValue) {
+            return Timestamp.valueOf(localDateTimeValue);
+        }
         if (value instanceof Date dateValue) {
             return Timestamp.valueOf(dateValue.toLocalDate().atStartOfDay());
         }
-        return value == null ? null : Timestamp.valueOf(String.valueOf(value));
+        if (value == null) {
+            return null;
+        }
+
+        String rawValue = String.valueOf(value);
+        if (rawValue.contains("T")) {
+            return Timestamp.valueOf(LocalDateTime.parse(rawValue, ISO_DATE_TIME));
+        }
+        return Timestamp.valueOf(rawValue);
     }
 
     private String toJsonString(Object value) {

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.template.worker.jobs.recap.monthly.model.MonthlyAppealHighlights;
 import com.template.worker.jobs.recap.monthly.model.MonthlyFamilyRecapSourceMetrics;
@@ -231,6 +232,17 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
         assertThat(result.appealHighlights().topSuccessfulRequester().requesterId()).isNull();
         assertThat(result.appealHighlights().topAcceptedApprover().approverId()).isNull();
         assertThat(bulkResult.get(2L).totalQuotaBytes()).isEqualTo(7000L);
+    }
+
+    @Test
+    @DisplayName("toIsoDateTime - ISO_LOCAL_DATE_TIME 문자열도 정상 변환한다")
+    void toIsoDateTime_withIsoLocalDateTimeString_returnsSameValue() {
+        String isoLocalDateTime = "2026-03-21T14:32:00";
+
+        String result =
+                ReflectionTestUtils.invokeMethod(repository, "toIsoDateTime", isoLocalDateTime);
+
+        assertThat(result).isEqualTo(isoLocalDateTime);
     }
 
     private DataSource createDataSource() {
