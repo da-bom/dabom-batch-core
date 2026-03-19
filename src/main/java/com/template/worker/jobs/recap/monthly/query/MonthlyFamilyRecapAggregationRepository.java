@@ -753,7 +753,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             }
 
             return summaries.values().stream()
-                    .sorted(AppealActorSummary.REQUESTER_COMPARATOR)
+                    .sorted(AppealActorSummary.TOP_ACTOR_COMPARATOR)
                     .findFirst()
                     .map(
                             summary ->
@@ -797,7 +797,7 @@ public class MonthlyFamilyRecapAggregationRepository {
             }
 
             return summaries.values().stream()
-                    .sorted(AppealActorSummary.APPROVER_COMPARATOR)
+                    .sorted(AppealActorSummary.TOP_ACTOR_COMPARATOR)
                     .findFirst()
                     .map(
                             summary ->
@@ -841,15 +841,7 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private static final class AppealActorSummary {
 
-        private static final Comparator<AppealActorSummary> REQUESTER_COMPARATOR =
-                Comparator.comparingInt(AppealActorSummary::count)
-                        .reversed()
-                        .thenComparing(
-                                AppealActorSummary::latestResolvedAt, Comparator.reverseOrder())
-                        .thenComparing(
-                                AppealActorSummary::actorId, Comparator.nullsLast(Long::compareTo));
-
-        private static final Comparator<AppealActorSummary> APPROVER_COMPARATOR =
+        private static final Comparator<AppealActorSummary> TOP_ACTOR_COMPARATOR =
                 Comparator.comparingInt(AppealActorSummary::count)
                         .reversed()
                         .thenComparing(
