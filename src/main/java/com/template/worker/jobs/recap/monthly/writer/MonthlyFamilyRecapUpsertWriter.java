@@ -1,7 +1,10 @@
 package com.template.worker.jobs.recap.monthly.writer;
 
 import java.sql.Date;
+import java.util.List;
 
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -10,12 +13,14 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 
 import com.template.worker.jobs.recap.monthly.model.MonthlyFamilyRecapRow;
+import com.template.worker.jobs.recap.monthly.processor.MonthlyFamilyRecapProcessor;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class MonthlyFamilyRecapUpsertWriter implements ItemWriter<MonthlyFamilyRecapRow> {
+public class MonthlyFamilyRecapUpsertWriter
+        implements ItemWriter<Long>, StepExecutionListener {
 
     // 월간 recap 결과를 family_id와 report_month 기준으로 업서트
     private static final String UPSERT_MONTHLY_RECAP_SQL =
@@ -64,16 +69,24 @@ public class MonthlyFamilyRecapUpsertWriter implements ItemWriter<MonthlyFamilyR
             """;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final MonthlyFamilyRecapProcessor processor;
 
     @Override
-    public void write(Chunk<? extends MonthlyFamilyRecapRow> chunk) {
+    public void beforeStep(StepExecution stepExecution) {
+        processor.beforeStep(stepExecution);
+    }
+
+    @Override
+    public void write(Chunk<? extends Long> chunk) {
         if (chunk.isEmpty()) {
             return;
         }
 
+        List<MonthlyFamilyRecapRow> rows = processor.processAll(List.copyOf(chunk.getItems()));
+
         // 청크 아이템을 배치 파라미터로 변환
         SqlParameterSource[] batchParams =
-                chunk.getItems().stream()
+                rows.stream()
                         .map(this::toSqlParameterSource)
                         .toArray(SqlParameterSource[]::new);
 

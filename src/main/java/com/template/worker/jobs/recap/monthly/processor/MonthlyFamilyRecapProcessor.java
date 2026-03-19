@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
@@ -51,10 +52,19 @@ public class MonthlyFamilyRecapProcessor
 
     @Override
     public MonthlyFamilyRecapRow process(Long familyId) {
-        // 가족별 원본 집계값 조회
-        MonthlyFamilyRecapSourceMetrics sourceMetrics =
-                aggregationRepository.aggregate(familyId, targetMonth);
+        return toRow(familyId, aggregationRepository.aggregate(familyId, targetMonth));
+    }
 
+    public List<MonthlyFamilyRecapRow> processAll(List<Long> familyIds) {
+        Map<Long, MonthlyFamilyRecapSourceMetrics> sourceMetricsByFamily =
+                aggregationRepository.aggregate(familyIds, targetMonth);
+
+        return familyIds.stream()
+                .map(familyId -> toRow(familyId, sourceMetricsByFamily.get(familyId)))
+                .collect(Collectors.toList());
+    }
+
+    private MonthlyFamilyRecapRow toRow(Long familyId, MonthlyFamilyRecapSourceMetrics sourceMetrics) {
         // writer 진입 전에 집계값 검증
         validateSourceMetrics(familyId, sourceMetrics);
 

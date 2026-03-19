@@ -3,6 +3,8 @@ package com.template.worker.jobs.recap.monthly.query;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -160,6 +162,8 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
                     + " 11:00:00', NULL)");
 
         MonthlyFamilyRecapSourceMetrics result = repository.aggregate(1L, LocalDate.of(2026, 3, 1));
+        Map<Long, MonthlyFamilyRecapSourceMetrics> bulkResult =
+                repository.aggregate(List.of(1L), LocalDate.of(2026, 3, 1));
 
         assertThat(result.fullWeekSnapshots()).hasSize(2);
         assertThat(result.fullWeekSnapshots().get(0).approvedAppealCount()).isEqualTo(2);
@@ -197,6 +201,8 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
         assertThat(topApprover.recentAcceptedAppeals())
                 .extracting(MonthlyAppealHighlights.RecentAcceptedAppeal::appealId)
                 .containsExactly(87L, 83L, 70L);
+        assertThat(bulkResult).containsKey(1L);
+        assertThat(bulkResult.get(1L).partialUsageMetrics().totalUsedBytes()).isEqualTo(600L);
     }
 
     @Test
@@ -210,6 +216,8 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
                     + " used_bytes, deleted_at) VALUES (2, 2, DATE '2026-03-01', 7000, 0, NULL)");
 
         MonthlyFamilyRecapSourceMetrics result = repository.aggregate(2L, LocalDate.of(2026, 3, 1));
+        Map<Long, MonthlyFamilyRecapSourceMetrics> bulkResult =
+                repository.aggregate(List.of(2L), LocalDate.of(2026, 3, 1));
 
         assertThat(result.fullWeekSnapshots()).isEmpty();
         assertThat(result.totalQuotaBytes()).isEqualTo(7000L);
@@ -218,6 +226,7 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
         assertThat(result.appealCarryInCount()).isZero();
         assertThat(result.appealHighlights().topSuccessfulRequester().requesterId()).isNull();
         assertThat(result.appealHighlights().topAcceptedApprover().approverId()).isNull();
+        assertThat(bulkResult.get(2L).totalQuotaBytes()).isEqualTo(7000L);
     }
 
     private DataSource createDataSource() {
