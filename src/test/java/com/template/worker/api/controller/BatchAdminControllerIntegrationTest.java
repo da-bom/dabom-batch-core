@@ -87,8 +87,6 @@ class BatchAdminControllerIntegrationTest {
             if ("COMPLETED".equals(pollingResponse.status())) {
                 break;
             }
-
-            Thread.sleep(100L);
         }
 
         assertThat(pollingResponse).isNotNull();
@@ -113,7 +111,6 @@ class BatchAdminControllerIntegrationTest {
             return new StepBuilder("test-manual-async-step", jobRepository)
                     .tasklet(
                             (contribution, chunkContext) -> {
-                                Thread.sleep(300L);
                                 return RepeatStatus.FINISHED;
                             },
                             transactionManager)

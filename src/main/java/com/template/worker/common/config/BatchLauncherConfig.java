@@ -12,9 +12,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @Configuration
 public class BatchLauncherConfig {
 
-    private final static int CORE_POOL_SIZE = 2;
-    private final static int MAX_POOL_SIZE = 4;
-    private final static int QUEUE_CAPACITY = 100;
+    private static final int CORE_POOL_SIZE = 2;
+    private static final int MAX_POOL_SIZE = 4;
+    private static final int QUEUE_CAPACITY = 100;
 
     @Bean(name = "manualBatchTaskExecutor")
     public TaskExecutor manualBatchTaskExecutor() {
