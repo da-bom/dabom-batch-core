@@ -176,7 +176,11 @@ public class WeeklyFamilyRecapAggregationRepository {
         applyUsageByWeekday(params, metricsByFamily);
         applyPeakUsage(params, metricsByFamily);
         applyQuota(params, metricsByFamily);
-        applyCount(READ_MISSION_CREATED_COUNT_SQL, "mission_created_count", params, metricsByFamily,
+        applyCount(
+                READ_MISSION_CREATED_COUNT_SQL,
+                "mission_created_count",
+                params,
+                metricsByFamily,
                 MutableWeeklyMetrics::setMissionCreatedCount);
         applyCount(
                 READ_MISSION_COMPLETED_COUNT_SQL,
@@ -239,7 +243,8 @@ public class WeeklyFamilyRecapAggregationRepository {
 
     private void applyTotalUsedBytes(
             MapSqlParameterSource params, Map<Long, MutableWeeklyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_TOTAL_USED_BYTES_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_TOTAL_USED_BYTES_SQL, params)
                 .forEach(
                         row ->
                                 metricsByFamily
@@ -249,10 +254,12 @@ public class WeeklyFamilyRecapAggregationRepository {
 
     private void applyUsageByWeekday(
             MapSqlParameterSource params, Map<Long, MutableWeeklyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_USAGE_BY_WEEKDAY_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_USAGE_BY_WEEKDAY_SQL, params)
                 .forEach(
                         row -> {
-                            MutableWeeklyMetrics metrics = metricsByFamily.get(toLong(row.get("family_id")));
+                            MutableWeeklyMetrics metrics =
+                                    metricsByFamily.get(toLong(row.get("family_id")));
                             metrics.usageBytesByWeekday.put(
                                     resolveWeekdayKey(toInt(row.get("day_of_week"))),
                                     toLong(row.get("total_bytes")));
@@ -261,23 +268,27 @@ public class WeeklyFamilyRecapAggregationRepository {
 
     private void applyPeakUsage(
             MapSqlParameterSource params, Map<Long, MutableWeeklyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_USAGE_BY_HOUR_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_USAGE_BY_HOUR_SQL, params)
                 .forEach(
                         row -> {
-                            MutableWeeklyMetrics metrics = metricsByFamily.get(toLong(row.get("family_id")));
+                            MutableWeeklyMetrics metrics =
+                                    metricsByFamily.get(toLong(row.get("family_id")));
                             int startHour = toInt(row.get("start_hour"));
                             long peakBytes = toLong(row.get("peak_bytes"));
                             if (peakBytes > metrics.peakUsage.peakBytes()
                                     || (peakBytes == metrics.peakUsage.peakBytes()
                                             && startHour < metrics.peakUsage.startHour())) {
-                                metrics.peakUsage = new WeeklyPeakUsage(startHour, startHour + 1, peakBytes);
+                                metrics.peakUsage =
+                                        new WeeklyPeakUsage(startHour, startHour + 1, peakBytes);
                             }
                         });
     }
 
     private void applyQuota(
             MapSqlParameterSource params, Map<Long, MutableWeeklyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_TOTAL_QUOTA_BYTES_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_TOTAL_QUOTA_BYTES_SQL, params)
                 .forEach(
                         row ->
                                 metricsByFamily
@@ -291,7 +302,8 @@ public class WeeklyFamilyRecapAggregationRepository {
             MapSqlParameterSource params,
             Map<Long, MutableWeeklyMetrics> metricsByFamily,
             CountApplier countApplier) {
-        jdbcTemplate.queryForList(sql, params)
+        jdbcTemplate
+                .queryForList(sql, params)
                 .forEach(
                         row ->
                                 countApplier.apply(

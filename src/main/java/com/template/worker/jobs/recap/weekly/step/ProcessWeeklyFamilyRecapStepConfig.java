@@ -34,8 +34,7 @@ public class ProcessWeeklyFamilyRecapStepConfig {
                         new StepBuilder(
                                         WeeklyFamilyRecapJobConstants.STEP_PROCESS_WEEKLY_RECAP,
                                         jobRepository)
-                                .<Long, Long>chunk(
-                                        properties.getChunkSize(), transactionManager)
+                                .<Long, Long>chunk(properties.getChunkSize(), transactionManager)
                                 .reader(reader)
                                 .writer(writer)
                                 .listener(writer)

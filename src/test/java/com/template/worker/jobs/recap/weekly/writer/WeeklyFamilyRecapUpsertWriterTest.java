@@ -35,7 +35,9 @@ class WeeklyFamilyRecapUpsertWriterTest {
 
         jdbcTemplate = new JdbcTemplate(dataSource);
         processor = mock(WeeklyFamilyRecapProcessor.class);
-        writer = new WeeklyFamilyRecapUpsertWriter(new NamedParameterJdbcTemplate(dataSource), processor);
+        writer =
+                new WeeklyFamilyRecapUpsertWriter(
+                        new NamedParameterJdbcTemplate(dataSource), processor);
 
         jdbcTemplate.execute("DROP TABLE IF EXISTS family_recap_weekly");
         jdbcTemplate.execute(

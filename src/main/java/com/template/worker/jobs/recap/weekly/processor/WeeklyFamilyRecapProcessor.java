@@ -58,7 +58,8 @@ public class WeeklyFamilyRecapProcessor
                 .collect(Collectors.toList());
     }
 
-    private WeeklyFamilyRecapRow toRow(Long familyId, WeeklyFamilyRecapSourceMetrics sourceMetrics) {
+    private WeeklyFamilyRecapRow toRow(
+            Long familyId, WeeklyFamilyRecapSourceMetrics sourceMetrics) {
         // writer 진입 전에 집계값 검증
         validateSourceMetrics(familyId, sourceMetrics);
 

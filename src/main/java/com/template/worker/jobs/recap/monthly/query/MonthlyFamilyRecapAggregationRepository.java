@@ -36,8 +36,10 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final String APPROVED_APPEAL_COUNT = "approved_appeal_count";
-    private static final String PARTIAL_EVENT_TIME_CONDITION = buildPartialRangeCondition("event_time");
-    private static final String PARTIAL_CREATED_AT_CONDITION = buildPartialRangeCondition("created_at");
+    private static final String PARTIAL_EVENT_TIME_CONDITION =
+            buildPartialRangeCondition("event_time");
+    private static final String PARTIAL_CREATED_AT_CONDITION =
+            buildPartialRangeCondition("created_at");
     private static final String PARTIAL_COMPLETED_AT_CONDITION =
             buildPartialRangeCondition("completed_at");
     private static final String PARTIAL_MR_RESOLVED_AT_CONDITION =
@@ -276,7 +278,9 @@ public class MonthlyFamilyRecapAggregationRepository {
                         .addValue("familyIds", familyIds)
                         .addValue("monthStartDate", Date.valueOf(targetMonth))
                         .addValue("monthEndExclusiveDate", Date.valueOf(monthEndExclusiveDate))
-                        .addValue("lastFullWeekStartDate", Date.valueOf(monthEndExclusiveDate.minusDays(7)))
+                        .addValue(
+                                "lastFullWeekStartDate",
+                                Date.valueOf(monthEndExclusiveDate.minusDays(7)))
                         .addValue("overlapStartDate", Date.valueOf(targetMonth.minusDays(6)))
                         .addValue("monthStart", Timestamp.valueOf(monthStart))
                         .addValue("monthEndExclusive", Timestamp.valueOf(monthEndExclusive));
@@ -334,7 +338,8 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private void applyFullWeekSnapshots(
             MapSqlParameterSource params, Map<Long, MutableMonthlyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_FULL_WEEKLY_RECAP_ROWS_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_FULL_WEEKLY_RECAP_ROWS_SQL, params)
                 .forEach(
                         row ->
                                 metricsByFamily
@@ -357,7 +362,8 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private void applyQuotaSnapshot(
             MapSqlParameterSource params, Map<Long, MutableMonthlyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_WEEKLY_QUOTA_ROWS_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_WEEKLY_QUOTA_ROWS_SQL, params)
                 .forEach(
                         row -> {
                             MutableMonthlyMetrics metrics =
@@ -371,7 +377,8 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private void applyFallbackFamilyQuota(
             MapSqlParameterSource params, Map<Long, MutableMonthlyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_FAMILY_QUOTA_BYTES_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_FAMILY_QUOTA_BYTES_SQL, params)
                 .forEach(
                         row -> {
                             MutableMonthlyMetrics metrics =
@@ -385,15 +392,16 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private void applyPartialUsage(
             MapSqlParameterSource params, Map<Long, MutableMonthlyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_TOTAL_USED_BYTES_IN_RANGE_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_TOTAL_USED_BYTES_IN_RANGE_SQL, params)
                 .forEach(
                         row ->
-                                metricsByFamily
-                                                .get(toLong(row.get("family_id")))
+                                metricsByFamily.get(toLong(row.get("family_id")))
                                                 .partialTotalUsedBytes +=
                                         toLong(row.get("total_used_bytes")));
 
-        jdbcTemplate.queryForList(READ_USAGE_BY_WEEKDAY_IN_RANGE_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_USAGE_BY_WEEKDAY_IN_RANGE_SQL, params)
                 .forEach(
                         row -> {
                             MutableMonthlyMetrics metrics =
@@ -405,7 +413,8 @@ public class MonthlyFamilyRecapAggregationRepository {
                                             + toLong(row.get("total_bytes")));
                         });
 
-        jdbcTemplate.queryForList(READ_USAGE_BY_HOUR_IN_RANGE_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_USAGE_BY_HOUR_IN_RANGE_SQL, params)
                 .forEach(
                         row -> {
                             MutableMonthlyMetrics metrics =
@@ -464,7 +473,8 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private void applyApprovedAppealEvents(
             MapSqlParameterSource params, Map<Long, MutableMonthlyMetrics> metricsByFamily) {
-        jdbcTemplate.queryForList(READ_APPROVED_APPEAL_EVENTS_SQL, params)
+        jdbcTemplate
+                .queryForList(READ_APPROVED_APPEAL_EVENTS_SQL, params)
                 .forEach(
                         row ->
                                 metricsByFamily
@@ -488,7 +498,8 @@ public class MonthlyFamilyRecapAggregationRepository {
             MapSqlParameterSource params,
             Map<Long, MutableMonthlyMetrics> metricsByFamily,
             ObjIntConsumer<MutableMonthlyMetrics> countSetter) {
-        jdbcTemplate.queryForList(sql, params)
+        jdbcTemplate
+                .queryForList(sql, params)
                 .forEach(
                         row ->
                                 countSetter.accept(
@@ -497,18 +508,26 @@ public class MonthlyFamilyRecapAggregationRepository {
     }
 
     private boolean hasPartialRange(MapSqlParameterSource params) {
-        return params.getValue("leftRangeStart") != null || params.getValue("rightRangeStart") != null;
+        return params.getValue("leftRangeStart") != null
+                || params.getValue("rightRangeStart") != null;
     }
 
-    private MapSqlParameterSource buildPartialRangeParams(List<Long> familyIds, LocalDate targetMonth) {
+    private MapSqlParameterSource buildPartialRangeParams(
+            List<Long> familyIds, LocalDate targetMonth) {
         List<DateRange> ranges = resolvePartialRanges(targetMonth);
         MapSqlParameterSource params = new MapSqlParameterSource().addValue("familyIds", familyIds);
-        addTimestamp(params, "leftRangeStart", ranges.size() > 0 ? ranges.get(0).startInclusive() : null);
+        addTimestamp(
+                params,
+                "leftRangeStart",
+                ranges.size() > 0 ? ranges.get(0).startInclusive() : null);
         addTimestamp(
                 params,
                 "leftRangeEndExclusive",
                 ranges.size() > 0 ? ranges.get(0).endExclusive() : null);
-        addTimestamp(params, "rightRangeStart", ranges.size() > 1 ? ranges.get(1).startInclusive() : null);
+        addTimestamp(
+                params,
+                "rightRangeStart",
+                ranges.size() > 1 ? ranges.get(1).startInclusive() : null);
         addTimestamp(
                 params,
                 "rightRangeEndExclusive",
@@ -526,7 +545,9 @@ public class MonthlyFamilyRecapAggregationRepository {
 
         List<DateRange> ranges = new ArrayList<>();
         if (monthStartDate.isBefore(firstFullWeekStart)) {
-            ranges.add(new DateRange(monthStartDate.atStartOfDay(), firstFullWeekStart.atStartOfDay()));
+            ranges.add(
+                    new DateRange(
+                            monthStartDate.atStartOfDay(), firstFullWeekStart.atStartOfDay()));
         }
         if (rightPartialWeekStart.isBefore(monthEndExclusiveDate)) {
             ranges.add(
@@ -674,7 +695,8 @@ public class MonthlyFamilyRecapAggregationRepository {
             MonthlyUsagePeakCandidate peakCandidate = MonthlyUsagePeakCandidate.empty();
             for (Map.Entry<Integer, Long> entry : partialUsageByHour.entrySet()) {
                 MonthlyUsagePeakCandidate candidate =
-                        new MonthlyUsagePeakCandidate(entry.getKey(), entry.getKey() + 1, entry.getValue());
+                        new MonthlyUsagePeakCandidate(
+                                entry.getKey(), entry.getKey() + 1, entry.getValue());
                 if (candidate.isBetterThan(peakCandidate)) {
                     peakCandidate = candidate;
                 }
@@ -694,7 +716,8 @@ public class MonthlyFamilyRecapAggregationRepository {
                 completedMissionCount += snapshot.missionCompletedCount();
                 rejectedRequestCount += snapshot.missionRejectedCount();
             }
-            return new MonthlyMissionSummary(totalMissionCount, completedMissionCount, rejectedRequestCount);
+            return new MonthlyMissionSummary(
+                    totalMissionCount, completedMissionCount, rejectedRequestCount);
         }
 
         private MonthlyAppealSummary toAppealSummary() {
@@ -710,7 +733,8 @@ public class MonthlyFamilyRecapAggregationRepository {
         }
 
         private MonthlyAppealHighlights toAppealHighlights() {
-            return new MonthlyAppealHighlights(buildTopSuccessfulRequester(), buildTopAcceptedApprover());
+            return new MonthlyAppealHighlights(
+                    buildTopSuccessfulRequester(), buildTopAcceptedApprover());
         }
 
         private MonthlyAppealHighlights.TopSuccessfulRequester buildTopSuccessfulRequester() {
@@ -719,7 +743,8 @@ public class MonthlyFamilyRecapAggregationRepository {
                 if (event.requesterId() == null) {
                     continue;
                 }
-                summaries.computeIfAbsent(
+                summaries
+                        .computeIfAbsent(
                                 event.requesterId(),
                                 requesterId ->
                                         new AppealActorSummary(
@@ -739,7 +764,9 @@ public class MonthlyFamilyRecapAggregationRepository {
                                             summary.actorName,
                                             summary.events.size(),
                                             summary.events.stream()
-                                                    .sorted(AppealActorSummary.RECENT_APPROVED_COMPARATOR)
+                                                    .sorted(
+                                                            AppealActorSummary
+                                                                    .RECENT_APPROVED_COMPARATOR)
                                                     .limit(3)
                                                     .map(
                                                             event ->
@@ -760,7 +787,8 @@ public class MonthlyFamilyRecapAggregationRepository {
                 if (event.approverId() == null) {
                     continue;
                 }
-                summaries.computeIfAbsent(
+                summaries
+                        .computeIfAbsent(
                                 event.approverId(),
                                 approverId ->
                                         new AppealActorSummary(
@@ -780,7 +808,9 @@ public class MonthlyFamilyRecapAggregationRepository {
                                             summary.actorName,
                                             summary.events.size(),
                                             summary.events.stream()
-                                                    .sorted(AppealActorSummary.RECENT_ACCEPTED_COMPARATOR)
+                                                    .sorted(
+                                                            AppealActorSummary
+                                                                    .RECENT_ACCEPTED_COMPARATOR)
                                                     .limit(3)
                                                     .map(
                                                             event ->
@@ -816,28 +846,41 @@ public class MonthlyFamilyRecapAggregationRepository {
         private static final Comparator<AppealActorSummary> REQUESTER_COMPARATOR =
                 Comparator.comparingInt(AppealActorSummary::count)
                         .reversed()
-                        .thenComparing(AppealActorSummary::latestResolvedAt, Comparator.reverseOrder())
-                        .thenComparing(AppealActorSummary::actorId, Comparator.nullsLast(Long::compareTo));
+                        .thenComparing(
+                                AppealActorSummary::latestResolvedAt, Comparator.reverseOrder())
+                        .thenComparing(
+                                AppealActorSummary::actorId, Comparator.nullsLast(Long::compareTo));
 
         private static final Comparator<AppealActorSummary> APPROVER_COMPARATOR =
                 Comparator.comparingInt(AppealActorSummary::count)
                         .reversed()
-                        .thenComparing(AppealActorSummary::latestResolvedAt, Comparator.reverseOrder())
-                        .thenComparing(AppealActorSummary::actorId, Comparator.nullsLast(Long::compareTo));
+                        .thenComparing(
+                                AppealActorSummary::latestResolvedAt, Comparator.reverseOrder())
+                        .thenComparing(
+                                AppealActorSummary::actorId, Comparator.nullsLast(Long::compareTo));
 
         private static final Comparator<ApprovedAppealEvent> RECENT_APPROVED_COMPARATOR =
-                Comparator.comparing(ApprovedAppealEvent::resolvedAt, Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(ApprovedAppealEvent::appealId, Comparator.nullsLast(Comparator.reverseOrder()));
+                Comparator.comparing(
+                                ApprovedAppealEvent::resolvedAt,
+                                Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(
+                                ApprovedAppealEvent::appealId,
+                                Comparator.nullsLast(Comparator.reverseOrder()));
 
         private static final Comparator<ApprovedAppealEvent> RECENT_ACCEPTED_COMPARATOR =
-                Comparator.comparing(ApprovedAppealEvent::resolvedAt, Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(ApprovedAppealEvent::appealId, Comparator.nullsLast(Comparator.reverseOrder()));
+                Comparator.comparing(
+                                ApprovedAppealEvent::resolvedAt,
+                                Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(
+                                ApprovedAppealEvent::appealId,
+                                Comparator.nullsLast(Comparator.reverseOrder()));
 
         private final Long actorId;
         private final String actorName;
         private final List<ApprovedAppealEvent> events;
 
-        private AppealActorSummary(Long actorId, String actorName, List<ApprovedAppealEvent> events) {
+        private AppealActorSummary(
+                Long actorId, String actorName, List<ApprovedAppealEvent> events) {
             this.actorId = actorId;
             this.actorName = actorName;
             this.events = events;

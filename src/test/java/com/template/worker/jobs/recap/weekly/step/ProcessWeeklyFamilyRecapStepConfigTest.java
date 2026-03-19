@@ -99,6 +99,7 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
 
         assertThat(stepExecution.getStatus()).isEqualTo(BatchStatus.FAILED);
     }
+
     private StepExecution createStepExecution(String stepName) {
         JobExecution jobExecution =
                 new JobExecution(

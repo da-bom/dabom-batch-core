@@ -19,8 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class MonthlyFamilyRecapUpsertWriter
-        implements ItemWriter<Long>, StepExecutionListener {
+public class MonthlyFamilyRecapUpsertWriter implements ItemWriter<Long>, StepExecutionListener {
 
     // 월간 recap 결과를 family_id와 report_month 기준으로 업서트
     private static final String UPSERT_MONTHLY_RECAP_SQL =
@@ -86,9 +85,7 @@ public class MonthlyFamilyRecapUpsertWriter
 
         // 청크 아이템을 배치 파라미터로 변환
         SqlParameterSource[] batchParams =
-                rows.stream()
-                        .map(this::toSqlParameterSource)
-                        .toArray(SqlParameterSource[]::new);
+                rows.stream().map(this::toSqlParameterSource).toArray(SqlParameterSource[]::new);
 
         // UNIQUE(family_id, report_month) 기준 멱등 업서트 실행
         jdbcTemplate.batchUpdate(UPSERT_MONTHLY_RECAP_SQL, batchParams);

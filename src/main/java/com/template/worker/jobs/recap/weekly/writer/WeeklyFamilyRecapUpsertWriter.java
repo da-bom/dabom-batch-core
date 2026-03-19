@@ -12,15 +12,14 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 
-import com.template.worker.jobs.recap.weekly.processor.WeeklyFamilyRecapProcessor;
 import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapRow;
+import com.template.worker.jobs.recap.weekly.processor.WeeklyFamilyRecapProcessor;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class WeeklyFamilyRecapUpsertWriter
-        implements ItemWriter<Long>, StepExecutionListener {
+public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<Long>, StepExecutionListener {
 
     // 주간 recap 결과를 family_id와 week_start_date 기준으로 업서트
     private static final String UPSERT_WEEKLY_RECAP_SQL =
@@ -92,9 +91,7 @@ public class WeeklyFamilyRecapUpsertWriter
 
         // 청크 아이템을 배치 파라미터로 변환
         SqlParameterSource[] batchParams =
-                rows.stream()
-                        .map(this::toSqlParameterSource)
-                        .toArray(SqlParameterSource[]::new);
+                rows.stream().map(this::toSqlParameterSource).toArray(SqlParameterSource[]::new);
 
         // UNIQUE(family_id, week_start_date) 기준 멱등 업서트 실행
         jdbcTemplate.batchUpdate(UPSERT_WEEKLY_RECAP_SQL, batchParams);
