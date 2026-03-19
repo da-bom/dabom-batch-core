@@ -1,6 +1,8 @@
 package com.template.worker.jobs.recap.monthly.writer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,11 +17,13 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import com.template.worker.jobs.recap.monthly.model.MonthlyFamilyRecapRow;
+import com.template.worker.jobs.recap.monthly.processor.MonthlyFamilyRecapProcessor;
 
 class MonthlyFamilyRecapUpsertWriterTest {
 
     private JdbcTemplate jdbcTemplate;
     private MonthlyFamilyRecapUpsertWriter writer;
+    private MonthlyFamilyRecapProcessor processor;
 
     @BeforeEach
     void setUp() {
@@ -30,7 +34,8 @@ class MonthlyFamilyRecapUpsertWriterTest {
         dataSource.setPassword("");
 
         jdbcTemplate = new JdbcTemplate(dataSource);
-        writer = new MonthlyFamilyRecapUpsertWriter(new NamedParameterJdbcTemplate(dataSource));
+        processor = mock(MonthlyFamilyRecapProcessor.class);
+        writer = new MonthlyFamilyRecapUpsertWriter(new NamedParameterJdbcTemplate(dataSource), processor);
 
         jdbcTemplate.execute("DROP TABLE IF EXISTS family_recap_monthly");
         jdbcTemplate.execute(
@@ -86,8 +91,10 @@ class MonthlyFamilyRecapUpsertWriterTest {
                         "{\"topSuccessfulRequester\":{},\"topAcceptedApprover\":{}}",
                         new BigDecimal("88.88"));
 
-        writer.write(new Chunk<>(List.of(firstRow)));
-        writer.write(new Chunk<>(List.of(secondRow)));
+        when(processor.processAll(List.of(10L))).thenReturn(List.of(firstRow), List.of(secondRow));
+
+        writer.write(new Chunk<>(List.of(10L)));
+        writer.write(new Chunk<>(List.of(10L)));
 
         Integer rowCount =
                 jdbcTemplate.queryForObject(
