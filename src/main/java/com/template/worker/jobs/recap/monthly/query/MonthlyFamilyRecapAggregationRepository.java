@@ -36,18 +36,6 @@ public class MonthlyFamilyRecapAggregationRepository {
 
     private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final String APPROVED_APPEAL_COUNT = "approved_appeal_count";
-    private static final String PARTIAL_EVENT_TIME_CONDITION =
-            buildPartialRangeCondition("event_time");
-    private static final String PARTIAL_CREATED_AT_CONDITION =
-            buildPartialRangeCondition("created_at");
-    private static final String PARTIAL_COMPLETED_AT_CONDITION =
-            buildPartialRangeCondition("completed_at");
-    private static final String PARTIAL_MR_RESOLVED_AT_CONDITION =
-            buildPartialRangeCondition("mr.resolved_at");
-    private static final String PARTIAL_APPEAL_CREATED_AT_CONDITION =
-            buildPartialRangeCondition("pa.created_at");
-    private static final String PARTIAL_APPEAL_RESOLVED_AT_CONDITION =
-            buildPartialRangeCondition("pa.resolved_at");
 
     private static final String READ_FULL_WEEKLY_RECAP_ROWS_SQL =
             """
@@ -86,9 +74,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             SELECT family_id, COALESCE(SUM(bytes_used), 0) AS total_used_bytes
             FROM usage_record
             WHERE family_id IN (:familyIds)
-              AND """
-                    + PARTIAL_EVENT_TIME_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND event_time >= :leftRangeStart AND event_time < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND event_time >= :rightRangeStart AND event_time < :rightRangeEndExclusive)
+              )
               AND deleted_at IS NULL
             GROUP BY family_id
             """;
@@ -98,9 +87,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             SELECT family_id, DAYOFWEEK(event_time) AS day_of_week, COALESCE(SUM(bytes_used), 0) AS total_bytes
             FROM usage_record
             WHERE family_id IN (:familyIds)
-              AND """
-                    + PARTIAL_EVENT_TIME_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND event_time >= :leftRangeStart AND event_time < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND event_time >= :rightRangeStart AND event_time < :rightRangeEndExclusive)
+              )
               AND deleted_at IS NULL
             GROUP BY family_id, DAYOFWEEK(event_time)
             """;
@@ -110,9 +100,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             SELECT family_id, HOUR(event_time) AS start_hour, COALESCE(SUM(bytes_used), 0) AS total_bytes
             FROM usage_record
             WHERE family_id IN (:familyIds)
-              AND """
-                    + PARTIAL_EVENT_TIME_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND event_time >= :leftRangeStart AND event_time < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND event_time >= :rightRangeStart AND event_time < :rightRangeEndExclusive)
+              )
               AND deleted_at IS NULL
             GROUP BY family_id, HOUR(event_time)
             """;
@@ -122,9 +113,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             SELECT family_id, COUNT(*) AS mission_created_count
             FROM mission_item
             WHERE family_id IN (:familyIds)
-              AND """
-                    + PARTIAL_CREATED_AT_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND created_at >= :leftRangeStart AND created_at < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND created_at >= :rightRangeStart AND created_at < :rightRangeEndExclusive)
+              )
               AND deleted_at IS NULL
             GROUP BY family_id
             """;
@@ -135,9 +127,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             FROM mission_item
             WHERE family_id IN (:familyIds)
               AND status = 'COMPLETED'
-              AND """
-                    + PARTIAL_COMPLETED_AT_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND completed_at >= :leftRangeStart AND completed_at < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND completed_at >= :rightRangeStart AND completed_at < :rightRangeEndExclusive)
+              )
               AND deleted_at IS NULL
             GROUP BY family_id
             """;
@@ -149,9 +142,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             JOIN mission_item mi ON mr.mission_item_id = mi.id
             WHERE mi.family_id IN (:familyIds)
               AND mr.status = 'REJECTED'
-              AND """
-                    + PARTIAL_MR_RESOLVED_AT_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND mr.resolved_at >= :leftRangeStart AND mr.resolved_at < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND mr.resolved_at >= :rightRangeStart AND mr.resolved_at < :rightRangeEndExclusive)
+              )
               AND mr.deleted_at IS NULL
               AND mi.deleted_at IS NULL
             GROUP BY mi.family_id
@@ -182,9 +176,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             JOIN policy_assignment pas ON pa.policy_assignment_id = pas.id
             WHERE pas.family_id IN (:familyIds)
               AND pa.type = 'NORMAL'
-              AND """
-                    + PARTIAL_APPEAL_CREATED_AT_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND pa.created_at >= :leftRangeStart AND pa.created_at < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND pa.created_at >= :rightRangeStart AND pa.created_at < :rightRangeEndExclusive)
+              )
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             GROUP BY pas.family_id
@@ -198,9 +193,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             WHERE pas.family_id IN (:familyIds)
               AND pa.type = 'NORMAL'
               AND pa.status = 'APPROVED'
-              AND """
-                    + PARTIAL_APPEAL_RESOLVED_AT_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND pa.resolved_at >= :leftRangeStart AND pa.resolved_at < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND pa.resolved_at >= :rightRangeStart AND pa.resolved_at < :rightRangeEndExclusive)
+              )
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             GROUP BY pas.family_id
@@ -214,9 +210,10 @@ public class MonthlyFamilyRecapAggregationRepository {
             WHERE pas.family_id IN (:familyIds)
               AND pa.type = 'NORMAL'
               AND pa.status = 'REJECTED'
-              AND """
-                    + PARTIAL_APPEAL_RESOLVED_AT_CONDITION
-                    + """
+              AND (
+                    (:leftRangeStart IS NOT NULL AND pa.resolved_at >= :leftRangeStart AND pa.resolved_at < :leftRangeEndExclusive)
+                 OR (:rightRangeStart IS NOT NULL AND pa.resolved_at >= :rightRangeStart AND pa.resolved_at < :rightRangeEndExclusive)
+              )
               AND pa.deleted_at IS NULL
               AND pas.deleted_at IS NULL
             GROUP BY pas.family_id
@@ -571,14 +568,6 @@ public class MonthlyFamilyRecapAggregationRepository {
             case 7 -> "saturday";
             default -> throw new IllegalArgumentException("Unexpected day_of_week: " + dayOfWeek);
         };
-    }
-
-    private static String buildPartialRangeCondition(String column) {
-        return """
-               ((:leftRangeStart IS NOT NULL AND %1$s >= :leftRangeStart AND %1$s < :leftRangeEndExclusive)
-                 OR (:rightRangeStart IS NOT NULL AND %1$s >= :rightRangeStart AND %1$s < :rightRangeEndExclusive))
-               """
-                .formatted(column);
     }
 
     private LocalDate toLocalDate(Object value) {
