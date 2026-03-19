@@ -172,37 +172,41 @@ class MonthlyFamilyRecapAggregationRepositoryTest {
         assertThat(result.partialUsageMetrics().usageBytesByWeekday())
                 .containsEntry("sunday", 300L)
                 .containsEntry("tuesday", 300L);
-        assertThat(result.partialUsageMetrics().peakUsageCandidate().startHour()).isEqualTo(22);
-        assertThat(result.partialUsageMetrics().peakUsageCandidate().peakBytes()).isEqualTo(500L);
+        assertThat(result.partialUsageMetrics().peakUsageCandidate())
+                .extracting("startHour", "peakBytes")
+                .containsExactly(22, 500L);
 
-        assertThat(result.missionSummary().totalMissionCount()).isEqualTo(3);
-        assertThat(result.missionSummary().completedMissionCount()).isEqualTo(2);
-        assertThat(result.missionSummary().rejectedRequestCount()).isEqualTo(1);
+        assertThat(result.missionSummary())
+                .extracting("totalMissionCount", "completedMissionCount", "rejectedRequestCount")
+                .containsExactly(3, 2, 1);
         assertThat(result.missionCarryInCount()).isEqualTo(1);
 
-        assertThat(result.appealSummary().totalAppeals()).isEqualTo(4);
-        assertThat(result.appealSummary().approvedAppeals()).isEqualTo(3);
-        assertThat(result.appealSummary().rejectedAppeals()).isEqualTo(1);
+        assertThat(result.appealSummary())
+                .extracting("totalAppeals", "approvedAppeals", "rejectedAppeals")
+                .containsExactly(4, 3, 1);
         assertThat(result.appealCarryInCount()).isEqualTo(1);
 
         MonthlyAppealHighlights.TopSuccessfulRequester topRequester =
                 result.appealHighlights().topSuccessfulRequester();
-        assertThat(topRequester.requesterId()).isEqualTo(101L);
-        assertThat(topRequester.requesterName()).isEqualTo("김민지");
-        assertThat(topRequester.approvedAppealCount()).isEqualTo(3);
+        assertThat(topRequester)
+                .extracting("requesterId", "requesterName", "approvedAppealCount")
+                .containsExactly(101L, "김민지", 3);
         assertThat(topRequester.recentApprovedAppeals())
                 .extracting(MonthlyAppealHighlights.RecentApprovedAppeal::appealId)
                 .containsExactly(87L, 83L, 70L);
 
         MonthlyAppealHighlights.TopAcceptedApprover topApprover =
                 result.appealHighlights().topAcceptedApprover();
-        assertThat(topApprover.approverId()).isEqualTo(201L);
-        assertThat(topApprover.approvedAppealCount()).isEqualTo(3);
+        assertThat(topApprover)
+                .extracting("approverId", "approvedAppealCount")
+                .containsExactly(201L, 3);
         assertThat(topApprover.recentAcceptedAppeals())
                 .extracting(MonthlyAppealHighlights.RecentAcceptedAppeal::appealId)
                 .containsExactly(87L, 83L, 70L);
         assertThat(bulkResult).containsKey(1L);
-        assertThat(bulkResult.get(1L).partialUsageMetrics().totalUsedBytes()).isEqualTo(600L);
+        assertThat(bulkResult.get(1L))
+                .extracting(metrics -> metrics.partialUsageMetrics().totalUsedBytes())
+                .isEqualTo(600L);
     }
 
     @Test

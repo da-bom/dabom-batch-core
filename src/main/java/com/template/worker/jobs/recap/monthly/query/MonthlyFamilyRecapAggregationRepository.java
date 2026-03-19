@@ -517,13 +517,11 @@ public class MonthlyFamilyRecapAggregationRepository {
         List<DateRange> ranges = resolvePartialRanges(targetMonth);
         MapSqlParameterSource params = new MapSqlParameterSource().addValue("familyIds", familyIds);
         addTimestamp(
-                params,
-                "leftRangeStart",
-                ranges.size() > 0 ? ranges.get(0).startInclusive() : null);
+                params, "leftRangeStart", ranges.isEmpty() ? null : ranges.get(0).startInclusive());
         addTimestamp(
                 params,
                 "leftRangeEndExclusive",
-                ranges.size() > 0 ? ranges.get(0).endExclusive() : null);
+                ranges.isEmpty() ? null : ranges.get(0).endExclusive());
         addTimestamp(
                 params,
                 "rightRangeStart",

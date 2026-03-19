@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
@@ -61,7 +60,7 @@ public class MonthlyFamilyRecapProcessor
 
         return familyIds.stream()
                 .map(familyId -> toRow(familyId, sourceMetricsByFamily.get(familyId)))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private MonthlyFamilyRecapRow toRow(
