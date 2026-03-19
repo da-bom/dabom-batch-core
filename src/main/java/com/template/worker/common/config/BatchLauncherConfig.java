@@ -12,12 +12,17 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @Configuration
 public class BatchLauncherConfig {
 
+    private final static int CORE_POOL_SIZE = 2;
+    private final static int MAX_POOL_SIZE = 4;
+    private final static int QUEUE_CAPACITY = 100;
+
     @Bean(name = "manualBatchTaskExecutor")
     public TaskExecutor manualBatchTaskExecutor() {
+        // 수동 배치 작업을 위한 별도의 TaskExecutor 설정
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(2);
-        taskExecutor.setMaxPoolSize(4);
-        taskExecutor.setQueueCapacity(100);
+        taskExecutor.setCorePoolSize(CORE_POOL_SIZE);
+        taskExecutor.setMaxPoolSize(MAX_POOL_SIZE);
+        taskExecutor.setQueueCapacity(QUEUE_CAPACITY);
         taskExecutor.setThreadNamePrefix("manual-batch-");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         taskExecutor.initialize();
@@ -29,6 +34,7 @@ public class BatchLauncherConfig {
             JobRepository jobRepository,
             @Qualifier("manualBatchTaskExecutor") TaskExecutor taskExecutor)
             throws Exception {
+        // TaskExecutorJobLauncher를 사용하여 비동기적으로 배치 작업 실행
         TaskExecutorJobLauncher jobLauncher = new TaskExecutorJobLauncher();
         jobLauncher.setJobRepository(jobRepository);
         jobLauncher.setTaskExecutor(taskExecutor);
