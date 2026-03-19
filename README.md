@@ -226,6 +226,7 @@ PowerShell에서는 `Copy-Item .env.example .env`를 사용할 수 있다.
 - Method: `POST`
 - Path: `/batch/run`
 - Body: `jobName` + `params`
+- Response: `202 Accepted` + `jobExecutionId`
 
 ```json
 {
@@ -233,6 +234,33 @@ PowerShell에서는 `Copy-Item .env.example .env`를 사용할 수 있다.
   "params": {
     "targetMonth": "2026-04-01"
   }
+}
+```
+
+```json
+{
+  "jobExecutionId": 12345,
+  "jobName": "monthly-usage-precreate-job",
+  "status": "STARTING",
+  "message": "Batch job accepted"
+}
+```
+
+배치 실행은 비동기로 시작되며, 실제 완료 여부는 상태 조회 API로 확인한다.
+
+- Method: `GET`
+- Path: `/batch/jobs/{jobExecutionId}`
+
+```json
+{
+  "jobExecutionId": 12345,
+  "jobName": "monthly-usage-precreate-job",
+  "status": "COMPLETED",
+  "createTime": "2026-03-19T15:23:29",
+  "startTime": "2026-03-19T15:23:29",
+  "endTime": "2026-03-19T15:24:47",
+  "exitCode": "COMPLETED",
+  "exitDescription": null
 }
 ```
 
