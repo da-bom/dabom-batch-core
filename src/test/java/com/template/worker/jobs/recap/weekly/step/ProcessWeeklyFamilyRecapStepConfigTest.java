@@ -7,8 +7,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.DisplayName;
@@ -25,8 +23,6 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.template.worker.common.retry.BatchRetrySupport;
-import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapRow;
-import com.template.worker.jobs.recap.weekly.processor.WeeklyFamilyRecapProcessor;
 import com.template.worker.jobs.recap.weekly.reader.WeeklyFamilyRecapFamilyReader;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapProperties;
 import com.template.worker.jobs.recap.weekly.writer.WeeklyFamilyRecapUpsertWriter;
@@ -39,7 +35,6 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
         JobRepository jobRepository = mock(JobRepository.class);
         PlatformTransactionManager transactionManager = new ResourcelessTransactionManager();
         WeeklyFamilyRecapFamilyReader reader = mock(WeeklyFamilyRecapFamilyReader.class);
-        WeeklyFamilyRecapProcessor processor = mock(WeeklyFamilyRecapProcessor.class);
         WeeklyFamilyRecapUpsertWriter writer = mock(WeeklyFamilyRecapUpsertWriter.class);
         WeeklyFamilyRecapProperties properties = new WeeklyFamilyRecapProperties();
         properties.setChunkSize(2);
@@ -49,13 +44,11 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
                         jobRepository,
                         transactionManager,
                         reader,
-                        processor,
                         writer,
                         properties,
                         new BatchRetrySupport(3, 0L));
 
         when(reader.read()).thenReturn(10L, (Long) null);
-        when(processor.process(10L)).thenReturn(createRow());
 
         AtomicInteger attempts = new AtomicInteger();
         doAnswer(
@@ -83,7 +76,6 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
         JobRepository jobRepository = mock(JobRepository.class);
         PlatformTransactionManager transactionManager = new ResourcelessTransactionManager();
         WeeklyFamilyRecapFamilyReader reader = mock(WeeklyFamilyRecapFamilyReader.class);
-        WeeklyFamilyRecapProcessor processor = mock(WeeklyFamilyRecapProcessor.class);
         WeeklyFamilyRecapUpsertWriter writer = mock(WeeklyFamilyRecapUpsertWriter.class);
         WeeklyFamilyRecapProperties properties = new WeeklyFamilyRecapProperties();
         properties.setChunkSize(2);
@@ -93,13 +85,11 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
                         jobRepository,
                         transactionManager,
                         reader,
-                        processor,
                         writer,
                         properties,
                         new BatchRetrySupport(3, 0L));
 
         when(reader.read()).thenReturn(10L, (Long) null);
-        when(processor.process(10L)).thenReturn(createRow());
         doThrow(new PessimisticLockingFailureException("deadlock", null)).when(writer).write(any());
 
         Step step = stepConfig.processWeeklyFamilyRecapStep();
@@ -108,23 +98,6 @@ class ProcessWeeklyFamilyRecapStepConfigTest {
         step.execute(stepExecution);
 
         assertThat(stepExecution.getStatus()).isEqualTo(BatchStatus.FAILED);
-    }
-
-    private WeeklyFamilyRecapRow createRow() {
-        return new WeeklyFamilyRecapRow(
-                10L,
-                LocalDate.of(2026, 3, 9),
-                100L,
-                1000L,
-                new BigDecimal("10.00"),
-                "{}",
-                "{}",
-                1,
-                1,
-                0,
-                1,
-                1,
-                0);
     }
 
     private StepExecution createStepExecution(String stepName) {

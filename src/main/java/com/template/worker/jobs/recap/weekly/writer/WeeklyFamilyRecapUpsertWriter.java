@@ -1,7 +1,10 @@
 package com.template.worker.jobs.recap.weekly.writer;
 
 import java.sql.Date;
+import java.util.List;
 
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -10,12 +13,13 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 
 import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapRow;
+import com.template.worker.jobs.recap.weekly.processor.WeeklyFamilyRecapProcessor;
 
 import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<WeeklyFamilyRecapRow> {
+public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<Long>, StepExecutionListener {
 
     // 주간 recap 결과를 family_id와 week_start_date 기준으로 업서트
     private static final String UPSERT_WEEKLY_RECAP_SQL =
@@ -70,18 +74,24 @@ public class WeeklyFamilyRecapUpsertWriter implements ItemWriter<WeeklyFamilyRec
             """;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final WeeklyFamilyRecapProcessor processor;
 
     @Override
-    public void write(Chunk<? extends WeeklyFamilyRecapRow> chunk) {
+    public void beforeStep(StepExecution stepExecution) {
+        processor.beforeStep(stepExecution);
+    }
+
+    @Override
+    public void write(Chunk<? extends Long> chunk) {
         if (chunk.isEmpty()) {
             return;
         }
 
+        List<WeeklyFamilyRecapRow> rows = processor.processAll(List.copyOf(chunk.getItems()));
+
         // 청크 아이템을 배치 파라미터로 변환
         SqlParameterSource[] batchParams =
-                chunk.getItems().stream()
-                        .map(this::toSqlParameterSource)
-                        .toArray(SqlParameterSource[]::new);
+                rows.stream().map(this::toSqlParameterSource).toArray(SqlParameterSource[]::new);
 
         // UNIQUE(family_id, week_start_date) 기준 멱등 업서트 실행
         jdbcTemplate.batchUpdate(UPSERT_WEEKLY_RECAP_SQL, batchParams);

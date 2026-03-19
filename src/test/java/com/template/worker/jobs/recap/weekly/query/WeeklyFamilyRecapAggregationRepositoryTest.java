@@ -3,6 +3,8 @@ package com.template.worker.jobs.recap.weekly.query;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -94,6 +96,8 @@ class WeeklyFamilyRecapAggregationRepositoryTest {
                     + " NULL, TIMESTAMP '2026-03-10 11:00:00', NULL)");
 
         WeeklyFamilyRecapSourceMetrics result = repository.aggregate(1L, LocalDate.of(2026, 3, 9));
+        Map<Long, WeeklyFamilyRecapSourceMetrics> bulkResult =
+                repository.aggregate(List.of(1L), LocalDate.of(2026, 3, 9));
 
         assertThat(result.totalUsedBytes()).isEqualTo(100L);
         assertThat(result.totalQuotaBytes()).isEqualTo(5000L);
@@ -103,6 +107,8 @@ class WeeklyFamilyRecapAggregationRepositoryTest {
         assertThat(result.totalAppealCount()).isEqualTo(4);
         assertThat(result.approvedAppealCount()).isEqualTo(2);
         assertThat(result.rejectedAppealCount()).isEqualTo(1);
+        assertThat(bulkResult).containsKey(1L);
+        assertThat(bulkResult.get(1L).missionRejectedCount()).isEqualTo(1);
     }
 
     private DataSource createDataSource() {

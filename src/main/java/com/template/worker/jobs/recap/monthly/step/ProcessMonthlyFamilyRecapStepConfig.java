@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.template.worker.common.retry.BatchRetrySupport;
-import com.template.worker.jobs.recap.monthly.model.MonthlyFamilyRecapRow;
-import com.template.worker.jobs.recap.monthly.processor.MonthlyFamilyRecapProcessor;
 import com.template.worker.jobs.recap.monthly.reader.MonthlyFamilyRecapFamilyReader;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapJobConstants;
 import com.template.worker.jobs.recap.monthly.support.MonthlyFamilyRecapProperties;
@@ -24,7 +22,6 @@ public class ProcessMonthlyFamilyRecapStepConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
     private final MonthlyFamilyRecapFamilyReader reader;
-    private final MonthlyFamilyRecapProcessor processor;
     private final MonthlyFamilyRecapUpsertWriter writer;
     private final MonthlyFamilyRecapProperties properties;
     private final BatchRetrySupport batchRetrySupport;
@@ -37,11 +34,10 @@ public class ProcessMonthlyFamilyRecapStepConfig {
                         new StepBuilder(
                                         MonthlyFamilyRecapJobConstants.STEP_PROCESS_MONTHLY_RECAP,
                                         jobRepository)
-                                .<Long, MonthlyFamilyRecapRow>chunk(
-                                        properties.getChunkSize(), transactionManager)
+                                .<Long, Long>chunk(properties.getChunkSize(), transactionManager)
                                 .reader(reader)
-                                .processor(processor)
                                 .writer(writer)
+                                .listener(writer)
                                 .faultTolerant())
                 .build();
     }

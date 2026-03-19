@@ -1,6 +1,8 @@
 package com.template.worker.jobs.recap.weekly.writer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,11 +17,13 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapRow;
+import com.template.worker.jobs.recap.weekly.processor.WeeklyFamilyRecapProcessor;
 
 class WeeklyFamilyRecapUpsertWriterTest {
 
     private JdbcTemplate jdbcTemplate;
     private WeeklyFamilyRecapUpsertWriter writer;
+    private WeeklyFamilyRecapProcessor processor;
 
     @BeforeEach
     void setUp() {
@@ -30,7 +34,10 @@ class WeeklyFamilyRecapUpsertWriterTest {
         dataSource.setPassword("");
 
         jdbcTemplate = new JdbcTemplate(dataSource);
-        writer = new WeeklyFamilyRecapUpsertWriter(new NamedParameterJdbcTemplate(dataSource));
+        processor = mock(WeeklyFamilyRecapProcessor.class);
+        writer =
+                new WeeklyFamilyRecapUpsertWriter(
+                        new NamedParameterJdbcTemplate(dataSource), processor);
 
         jdbcTemplate.execute("DROP TABLE IF EXISTS family_recap_weekly");
         jdbcTemplate.execute(
@@ -96,8 +103,10 @@ class WeeklyFamilyRecapUpsertWriterTest {
                         2,
                         1);
 
-        writer.write(new Chunk<>(List.of(firstRow)));
-        writer.write(new Chunk<>(List.of(secondRow)));
+        when(processor.processAll(List.of(10L))).thenReturn(List.of(firstRow), List.of(secondRow));
+
+        writer.write(new Chunk<>(List.of(10L)));
+        writer.write(new Chunk<>(List.of(10L)));
 
         Integer rowCount =
                 jdbcTemplate.queryForObject(

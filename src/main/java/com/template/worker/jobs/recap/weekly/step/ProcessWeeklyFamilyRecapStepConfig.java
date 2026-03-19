@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.template.worker.common.retry.BatchRetrySupport;
-import com.template.worker.jobs.recap.weekly.model.WeeklyFamilyRecapRow;
-import com.template.worker.jobs.recap.weekly.processor.WeeklyFamilyRecapProcessor;
 import com.template.worker.jobs.recap.weekly.reader.WeeklyFamilyRecapFamilyReader;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapJobConstants;
 import com.template.worker.jobs.recap.weekly.support.WeeklyFamilyRecapProperties;
@@ -24,7 +22,6 @@ public class ProcessWeeklyFamilyRecapStepConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
     private final WeeklyFamilyRecapFamilyReader reader;
-    private final WeeklyFamilyRecapProcessor processor;
     private final WeeklyFamilyRecapUpsertWriter writer;
     private final WeeklyFamilyRecapProperties properties;
     private final BatchRetrySupport batchRetrySupport;
@@ -37,11 +34,10 @@ public class ProcessWeeklyFamilyRecapStepConfig {
                         new StepBuilder(
                                         WeeklyFamilyRecapJobConstants.STEP_PROCESS_WEEKLY_RECAP,
                                         jobRepository)
-                                .<Long, WeeklyFamilyRecapRow>chunk(
-                                        properties.getChunkSize(), transactionManager)
+                                .<Long, Long>chunk(properties.getChunkSize(), transactionManager)
                                 .reader(reader)
-                                .processor(processor)
                                 .writer(writer)
+                                .listener(writer)
                                 .faultTolerant())
                 .build();
     }

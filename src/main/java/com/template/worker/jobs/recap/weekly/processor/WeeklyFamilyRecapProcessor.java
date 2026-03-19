@@ -45,10 +45,20 @@ public class WeeklyFamilyRecapProcessor
 
     @Override
     public WeeklyFamilyRecapRow process(Long familyId) {
-        // 가족별 원본 집계값을 조회
-        WeeklyFamilyRecapSourceMetrics sourceMetrics =
-                aggregationRepository.aggregate(familyId, weekStartDate);
+        return toRow(familyId, aggregationRepository.aggregate(familyId, weekStartDate));
+    }
 
+    public List<WeeklyFamilyRecapRow> processAll(List<Long> familyIds) {
+        Map<Long, WeeklyFamilyRecapSourceMetrics> sourceMetricsByFamily =
+                aggregationRepository.aggregate(familyIds, weekStartDate);
+
+        return familyIds.stream()
+                .map(familyId -> toRow(familyId, sourceMetricsByFamily.get(familyId)))
+                .toList();
+    }
+
+    private WeeklyFamilyRecapRow toRow(
+            Long familyId, WeeklyFamilyRecapSourceMetrics sourceMetrics) {
         // writer 진입 전에 집계값 검증
         validateSourceMetrics(familyId, sourceMetrics);
 

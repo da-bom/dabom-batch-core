@@ -34,12 +34,12 @@ batch:
   jobs:
     weekly-family-recap:
       lock-ttl: ${BATCH_WEEKLY_FAMILY_RECAP_LOCK_TTL:PT1H}
-      chunk-size: ${BATCH_WEEKLY_FAMILY_RECAP_CHUNK_SIZE:500}
-      db-fetch-size: ${BATCH_WEEKLY_FAMILY_RECAP_DB_FETCH_SIZE:1000}
+      chunk-size: ${BATCH_WEEKLY_FAMILY_RECAP_CHUNK_SIZE:1000}
+      db-fetch-size: ${BATCH_WEEKLY_FAMILY_RECAP_DB_FETCH_SIZE:4000}
     monthly-family-recap:
       lock-ttl: ${BATCH_MONTHLY_FAMILY_RECAP_LOCK_TTL:PT1H}
-      chunk-size: ${BATCH_MONTHLY_FAMILY_RECAP_CHUNK_SIZE:500}
-      db-fetch-size: ${BATCH_MONTHLY_FAMILY_RECAP_DB_FETCH_SIZE:1000}
+      chunk-size: ${BATCH_MONTHLY_FAMILY_RECAP_CHUNK_SIZE:1000}
+      db-fetch-size: ${BATCH_MONTHLY_FAMILY_RECAP_DB_FETCH_SIZE:4000}
     monthly-usage-precreate:
       lock-ttl: ${BATCH_MONTHLY_USAGE_PRECREATE_LOCK_TTL:PT1H}
       db-fetch-size: ${BATCH_MONTHLY_USAGE_PRECREATE_DB_FETCH_SIZE:4000}
