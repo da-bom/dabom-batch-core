@@ -25,13 +25,14 @@ public class BatchJobQueryService {
 
         boolean executionFinished = jobExecution.getEndTime() != null;
         ExitStatus exitStatus = jobExecution.getExitStatus();
-        String exitCode = executionFinished && exitStatus != null ? exitStatus.getExitCode() : null;
-        String exitDescription =
-                executionFinished
-                                && exitStatus != null
-                                && !exitStatus.getExitDescription().isBlank()
-                        ? exitStatus.getExitDescription()
-                        : null;
+        String exitCode = null;
+        String exitDescription = null;
+        if (executionFinished) {
+            exitCode = exitStatus.getExitCode();
+            if (!exitStatus.getExitDescription().isBlank()) {
+                exitDescription = exitStatus.getExitDescription();
+            }
+        }
 
         return new BatchJobExecutionResponse(
                 jobExecution.getId(),
