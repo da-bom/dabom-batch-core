@@ -1,12 +1,18 @@
 package com.template.worker.api.controller;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.template.worker.api.dto.BatchJobExecutionResponse;
 import com.template.worker.api.dto.RunBatchRequest;
+import com.template.worker.api.dto.RunBatchResponse;
 import com.template.worker.api.service.BatchAdminService;
+import com.template.worker.api.service.BatchJobQueryService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,9 +24,16 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/batch")
 public class BatchAdminController {
     private final BatchAdminService service;
+    private final BatchJobQueryService queryService;
 
     @PostMapping("/run")
-    public void run(@RequestBody RunBatchRequest request) throws Exception {
-        service.run(request);
+    public ResponseEntity<RunBatchResponse> run(@RequestBody RunBatchRequest request)
+            throws Exception {
+        return ResponseEntity.accepted().body(service.run(request));
+    }
+
+    @GetMapping("/jobs/{jobExecutionId}")
+    public BatchJobExecutionResponse getJobExecution(@PathVariable Long jobExecutionId) {
+        return queryService.getJobExecution(jobExecutionId);
     }
 }

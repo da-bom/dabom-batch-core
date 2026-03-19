@@ -1,8 +1,10 @@
 package com.template.worker.api.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -13,8 +15,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobInstance;
 
 import com.template.worker.api.dto.RunBatchRequest;
+import com.template.worker.api.dto.RunBatchResponse;
 import com.template.worker.common.launcher.BatchJobLauncher;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,12 +35,20 @@ class BatchAdminServiceTest {
     void run_delegatesToLauncher() throws Exception {
         // given
         RunBatchRequest request = createRequest("exampleJob", Map.of("date", "2024-01-01"));
+        JobExecution jobExecution = new JobExecution(1L);
+        jobExecution.setJobInstance(new JobInstance(1L, "exampleJob"));
+        jobExecution.setStatus(BatchStatus.STARTING);
+        when(launcher.runAsync(eq("exampleJob"), anyMap())).thenReturn(jobExecution);
 
         // when
-        batchAdminService.run(request);
+        RunBatchResponse response = batchAdminService.run(request);
 
         // then
-        verify(launcher).run(eq("exampleJob"), anyMap());
+        verify(launcher).runAsync(eq("exampleJob"), anyMap());
+        assertThat(response.jobExecutionId()).isEqualTo(1L);
+        assertThat(response.jobName()).isEqualTo("exampleJob");
+        assertThat(response.status()).isEqualTo("STARTING");
+        assertThat(response.message()).isEqualTo("Batch job accepted");
     }
 
     private RunBatchRequest createRequest(String jobName, Map<String, String> params)
